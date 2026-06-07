@@ -1,0 +1,16 @@
+{
+  "name": "@hasan-qa-humans/example-sama-erp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Example QA setup for a SAMA-ERP-like multi-tenant ecommerce/ERP app.",
+  "scripts": {
+    "qa:doctor": "hqa doctor",
+    "qa:discover": "hqa discover",
+    "qa:run": "hqa run"
+  },
+  "dependencies": {
+    "@hasan-qa-humans/core": "workspace:*",
+    "@hasan-qa-humans/scenario-library": "workspace:*"
+  }
+}

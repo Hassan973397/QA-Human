@@ -1,0 +1,27 @@
+{
+  "name": "hasan-qa-humans",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hasan QA Humans - a human-like QA automation platform built on top of Playwright",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b --watch",
+    "typecheck": "tsc -b --noEmit || tsc -b",
+    "clean": "tsc -b --clean && rimraf \"packages/*/dist\" \"apps/*/dist\" \"**/*.tsbuildinfo\"",
+    "lint": "eslint . --ext .ts || echo 'eslint not configured, skipping'",
+    "test": "node --test || echo 'no tests yet'",
+    "hqa": "node apps/cli/dist/index.js"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.10.0",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

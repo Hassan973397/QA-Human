@@ -1,0 +1,28 @@
+{
+  "name": "@hasan-qa-humans/cli",
+  "version": "1.0.0",
+  "description": "hqa — the Hasan QA Humans command-line interface.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "hqa": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@hasan-qa-humans/core": "workspace:*",
+    "@hasan-qa-humans/playwright-runner": "workspace:*",
+    "@hasan-qa-humans/scenario-library": "workspace:*",
+    "commander": "^12.1.0",
+    "fs-extra": "^11.2.0",
+    "ora": "^8.1.1",
+    "picocolors": "^1.1.1",
+    "playwright": "^1.49.0",
+    "tsx": "^4.19.2"
+  }
+}
