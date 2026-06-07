@@ -1,0 +1,23 @@
+{
+  "name": "@hasan-qa-humans/scenario-library",
+  "version": "1.0.0",
+  "description": "Ready-made human QA scenarios (ecommerce, security, smoke) for Hasan QA Humans.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@hasan-qa-humans/core": "workspace:*"
+  }
+}

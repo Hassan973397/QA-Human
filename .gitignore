@@ -1,0 +1,22 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.DS_Store
+
+# Environments / secrets (never commit secrets)
+.env
+.env.*
+!.env.*.example
+
+# QA runtime artifacts
+qa/.hqa/
+qa/.auth/
+qa/reports/
+playwright-report/
+test-results/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
