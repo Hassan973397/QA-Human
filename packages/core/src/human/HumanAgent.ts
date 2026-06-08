@@ -7,6 +7,8 @@ import { ensureDir, fs } from "../utils/file.js";
 import { compareScreenshots } from "../quality/visualCompare.js";
 import { runAxeAudit, impactAtLeast } from "../quality/a11yAudit.js";
 import { auditPageHeuristics } from "../quality/uxHeuristics.js";
+import { auditUiQuality, checkHorizontalOverflow } from "../quality/uiQuality.js";
+import { auditSeo } from "../quality/seoAudit.js";
 import type { ArtifactRef, A11yViolation, UxFinding } from "../reporting/types.js";
 import { humanClick, humanFill, humanType } from "./HumanAction.js";
 import {
@@ -404,6 +406,42 @@ export class HumanAgent {
       this.deps.reporter.setStepDetail(
         `${findings.length} UX finding(s)${med ? `, ${med} worth fixing` : ""}`,
       );
+    });
+  }
+
+  /** يدقّق جودة التصميم/الشكل للصفحة الحالية (تباين، خطوط، صور، تخطيط). */
+  async reviewDesign(scopeLabel?: string): Promise<void> {
+    await this.recordPageFindings("design review", scopeLabel, auditUiQuality);
+  }
+
+  /** يدقّق SEO والميتا للصفحة الحالية. */
+  async reviewSeo(scopeLabel?: string): Promise<void> {
+    await this.recordPageFindings("seo review", scopeLabel, auditSeo);
+  }
+
+  /** يفحص كسر التخطيط عند المقاس الحالي (يُستعمل بعد تغيير حجم النافذة). */
+  async checkResponsive(label: string): Promise<void> {
+    await this.act(`responsive check (${label})`, async () => {
+      const raw = await checkHorizontalOverflow(this.deps.page, label);
+      const scope = this.deps.page.url();
+      this.deps.reporter.recordUxFindings(raw.map((r) => ({ scope, ...r })));
+      this.deps.reporter.setStepDetail(raw.length ? `breaks at ${label}` : `ok at ${label}`);
+    });
+  }
+
+  /** مساعد مشترك: يشغّل محرّك تدقيق على الصفحة ويسجّل ملاحظاته. */
+  private async recordPageFindings(
+    title: string,
+    scopeLabel: string | undefined,
+    engine: (page: import("playwright").Page) => Promise<import("../quality/uxHeuristics.js").RawUxFinding[]>,
+  ): Promise<void> {
+    await this.act(`${title}${scopeLabel ? ` (${scopeLabel})` : ""}`, async () => {
+      const scope = scopeLabel ?? this.deps.page.url();
+      const raw = await engine(this.deps.page);
+      const findings: UxFinding[] = raw.map((r) => ({ scope, ...r }));
+      this.deps.reporter.recordUxFindings(findings);
+      const med = findings.filter((f) => f.severity === "medium").length;
+      this.deps.reporter.setStepDetail(`${findings.length} finding(s)${med ? `, ${med} worth fixing` : ""}`);
     });
   }
 

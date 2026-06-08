@@ -39,6 +39,11 @@ test("the expected flagship scenarios are present", () => {
     "a11y.audit",
     "explore.crawl",
     "review.productOwner",
+    "ui.designQuality",
+    "ui.responsive",
+    "seo.audit",
+    "api.security",
+    "links.integrity",
   ]) {
     assert.ok(ids.has(id), `missing ${id}`);
   }

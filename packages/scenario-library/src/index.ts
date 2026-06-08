@@ -16,6 +16,11 @@ import exploreCrawl from "./explore/crawl.js";
 import visualPages from "./quality/visualPages.js";
 import a11yAudit from "./quality/a11yAudit.js";
 import productOwnerReview from "./review/productOwner.js";
+import designQuality from "./review/designQuality.js";
+import seoAudit from "./review/seoAudit.js";
+import responsive from "./review/responsive.js";
+import apiSecurity from "./review/apiSecurity.js";
+import linksIntegrity from "./review/linksIntegrity.js";
 
 export {
   authLogin,
@@ -25,6 +30,11 @@ export {
   visualPages,
   a11yAudit,
   productOwnerReview,
+  designQuality,
+  seoAudit,
+  responsive,
+  apiSecurity,
+  linksIntegrity,
   customerCreateOrder,
   merchantManageOrder,
   merchantBlockCustomer,
@@ -54,6 +64,11 @@ export const builtinScenarios: ScenarioDefinition[] = [
   visualPages,
   a11yAudit,
   productOwnerReview,
+  designQuality,
+  seoAudit,
+  responsive,
+  apiSecurity,
+  linksIntegrity,
 ];
 
 /** Look up built-in scenarios by id, with substring fallback. */

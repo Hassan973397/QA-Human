@@ -75,35 +75,55 @@ function renderPerformance(report: QaReport): string[] {
   return l;
 }
 
-/** قسم مجمّع لملاحظات صاحب المشروع، مرتّب حسب الصفحة ثم الخطورة. */
+const DOMAIN_LABEL: Record<string, string> = {
+  ux: "UX & structure",
+  ui: "Design & visual quality",
+  responsive: "Responsive layout",
+  seo: "SEO & metadata",
+  api: "Backend / API",
+  links: "Links & assets",
+};
+
+/** قسم مراجعة شاملة مجمّع حسب الطبقة ثم الصفحة، مرتّب بالخطورة. */
 function renderProductReview(report: QaReport): string[] {
   const findings = report.scenarios.flatMap((s) => s.uxFindings).filter((f) => !f.category.endsWith("-more"));
   if (findings.length === 0) return [];
-  const byScope = new Map<string, typeof findings>();
+  const byDomain = new Map<string, typeof findings>();
   for (const f of findings) {
-    const list = byScope.get(f.scope) ?? [];
+    const d = f.domain ?? "ux";
+    const list = byDomain.get(d) ?? [];
     list.push(f);
-    byScope.set(f.scope, list);
+    byDomain.set(d, list);
   }
+  const high = findings.filter((f) => weight(f.severity) >= 3).length;
   const med = findings.filter((f) => f.severity === "medium").length;
-  const l: string[] = ["", "## 🧐 Product Review (owner's eye)"];
-  l.push(`${findings.length} observation(s) across ${byScope.size} page(s)${med ? ` — ${med} worth fixing` : ""}.`);
-  for (const [scope, list] of byScope) {
+  const l: string[] = ["", "## 🧐 Comprehensive Review (owner's eye)"];
+  l.push(`${findings.length} observation(s) across ${byDomain.size} layer(s)${high ? ` — ${high} important` : ""}${med ? `, ${med} worth fixing` : ""}.`);
+  for (const [domain, list] of byDomain) {
     l.push("");
-    l.push(`### \`${scope}\``);
-    for (const f of list.sort((a, b) => weight(b.severity) - weight(a.severity))) {
-      l.push(`- ${sev(f.severity)} **${f.title}** — ${f.detail}`);
-      l.push(`  - 💡 ${f.suggestion}${f.selector ? ` (\`${f.selector}\`)` : ""}`);
+    l.push(`### ${DOMAIN_LABEL[domain] ?? domain}`);
+    const byScope = new Map<string, typeof list>();
+    for (const f of list) {
+      const s = byScope.get(f.scope) ?? [];
+      s.push(f);
+      byScope.set(f.scope, s);
+    }
+    for (const [scope, items] of byScope) {
+      l.push(`- \`${scope}\``);
+      for (const f of items.sort((a, b) => weight(b.severity) - weight(a.severity))) {
+        l.push(`  - ${sev(f.severity)} **${f.title}** — ${f.detail}`);
+        l.push(`    - 💡 ${f.suggestion}${f.selector ? ` (\`${f.selector}\`)` : ""}`);
+      }
     }
   }
   return l;
 }
 
 function sev(s: string): string {
-  return s === "medium" ? "🟠" : "🟡";
+  return s === "critical" || s === "high" ? "🔴" : s === "medium" ? "🟠" : "🟡";
 }
 function weight(s: string): number {
-  return s === "medium" ? 2 : 1;
+  return s === "critical" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1;
 }
 
 function renderScenario(sc: ScenarioResult): string[] {

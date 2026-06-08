@@ -66,6 +66,8 @@ export interface A11yViolation {
 export interface UxFinding {
   /** الصفحة التي رُصدت فيها الملاحظة (مسار أو رابط). */
   scope: string;
+  /** الطبقة: ux | ui | seo | responsive | api | links (افتراضي ux). */
+  domain?: string;
   /** تصنيف ثابت يُمكّن التجميع، مثل form-maybe-no-submit. */
   category: string;
   severity: Severity;

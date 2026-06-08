@@ -227,36 +227,59 @@ function scenarioBlock(sc: ScenarioResult): string {
   </div>`;
 }
 
-/** قسم «مراجعة المنتج» — ملاحظات صاحب المشروع مجمّعة حسب الصفحة. */
+const DOMAIN_LABEL: Record<string, string> = {
+  ux: "UX & structure",
+  ui: "Design & visual quality",
+  responsive: "Responsive layout",
+  seo: "SEO & metadata",
+  api: "Backend / API",
+  links: "Links & assets",
+};
+
+/** قسم «مراجعة شاملة» — ملاحظات مجمّعة حسب الطبقة ثم الصفحة. */
 function productReviewBlock(report: QaReport): string {
   const findings = report.scenarios
     .flatMap((s) => s.uxFindings)
     .filter((f) => !f.category.endsWith("-more"));
   if (findings.length === 0) return "";
-  const byScope = new Map<string, typeof findings>();
-  for (const f of findings) {
-    const list = byScope.get(f.scope) ?? [];
-    list.push(f);
-    byScope.set(f.scope, list);
-  }
-  const med = findings.filter((f) => f.severity === "medium").length;
+  const w = (s: string): number => (s === "critical" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1);
   const sevDot = (s: string): string =>
-    `<span style="color:${s === "medium" ? "#f59e0b" : "#eab308"}">●</span>`;
-  const blocks = Array.from(byScope.entries())
-    .map(([scope, list]) => {
-      const items = list
-        .sort((a, b) => (b.severity === "medium" ? 1 : 0) - (a.severity === "medium" ? 1 : 0))
-        .map(
-          (f) =>
-            `<li>${sevDot(f.severity)} <strong>${esc(f.title)}</strong> — ${esc(f.detail)}<br>
-             <span class="muted">💡 ${esc(f.suggestion)}${f.selector ? ` <code>${esc(f.selector)}</code>` : ""}</span></li>`,
-        )
+    `<span style="color:${w(s) >= 3 ? "#dc2626" : s === "medium" ? "#f59e0b" : "#eab308"}">●</span>`;
+  const byDomain = new Map<string, typeof findings>();
+  for (const f of findings) {
+    const d = f.domain ?? "ux";
+    const list = byDomain.get(d) ?? [];
+    list.push(f);
+    byDomain.set(d, list);
+  }
+  const high = findings.filter((f) => w(f.severity) >= 3).length;
+  const med = findings.filter((f) => f.severity === "medium").length;
+  const blocks = Array.from(byDomain.entries())
+    .map(([domain, list]) => {
+      const byScope = new Map<string, typeof list>();
+      for (const f of list) {
+        const s = byScope.get(f.scope) ?? [];
+        s.push(f);
+        byScope.set(f.scope, s);
+      }
+      const scopes = Array.from(byScope.entries())
+        .map(([scope, items]) => {
+          const lis = items
+            .sort((a, b) => w(b.severity) - w(a.severity))
+            .map(
+              (f) =>
+                `<li>${sevDot(f.severity)} <strong>${esc(f.title)}</strong> — ${esc(f.detail)}<br>
+                 <span class="muted">💡 ${esc(f.suggestion)}${f.selector ? ` <code>${esc(f.selector)}</code>` : ""}</span></li>`,
+            )
+            .join("");
+          return `<div class="muted" style="margin-top:6px"><code>${esc(scope)}</code></div><ul>${lis}</ul>`;
+        })
         .join("");
-      return `<div class="scenario"><strong><code>${esc(scope)}</code></strong><ul>${items}</ul></div>`;
+      return `<div class="scenario"><strong>${esc(DOMAIN_LABEL[domain] ?? domain)}</strong> <span class="muted">(${list.length})</span>${scopes}</div>`;
     })
     .join("");
-  return `<h2>🧐 Product Review <span class="muted" style="font-size:14px">— owner's eye</span></h2>
-    <div class="muted">${findings.length} observation(s) across ${byScope.size} page(s)${med ? ` · ${med} worth fixing` : ""}.</div>
+  return `<h2>🧐 Comprehensive Review <span class="muted" style="font-size:14px">— owner's eye across every layer</span></h2>
+    <div class="muted">${findings.length} observation(s) across ${byDomain.size} layer(s)${high ? ` · ${high} important` : ""}${med ? ` · ${med} worth fixing` : ""}.</div>
     ${blocks}`;
 }
 

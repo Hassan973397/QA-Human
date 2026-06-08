@@ -80,6 +80,9 @@ export {
   type ImpactLevel,
 } from "./quality/a11yAudit.js";
 export { auditPageHeuristics, type RawUxFinding } from "./quality/uxHeuristics.js";
+export { auditUiQuality, checkHorizontalOverflow } from "./quality/uiQuality.js";
+export { auditSeo } from "./quality/seoAudit.js";
+export { auditApi } from "./quality/apiAudit.js";
 
 // Safety
 export { SafetyGuard, type SafetyDecision } from "./safety/SafetyGuard.js";
