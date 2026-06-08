@@ -2,8 +2,6 @@ import path from "node:path";
 import {
   loadQaConfig,
   KnowledgeStore,
-  ProjectScanner,
-  buildKnowledgeGraph,
   writeText,
   pathExists,
   ensureDir,
@@ -12,7 +10,7 @@ import {
   type AppKnowledgeGraph,
 } from "@hasan-qa-humans/core";
 import { scenarioTemplates } from "@hasan-qa-humans/scenario-library";
-import { getProjectRoot, getQaDir, getScenariosDir, tsxImporter } from "../lib.js";
+import { getProjectRoot, getQaDir, getScenariosDir, discoverWithCache, tsxImporter } from "../lib.js";
 
 interface GenerateOptions {
   cwd?: string;
@@ -23,17 +21,12 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
   const root = getProjectRoot(options);
   const { config } = await loadQaConfig({ root, importer: tsxImporter });
 
-  // Load discovery graph; if absent, run a quick discovery so generation is informed.
+  // Load discovery graph; if absent, run a quick (cached) discovery first.
   const store = new KnowledgeStore(getQaDir(root));
   let graph: AppKnowledgeGraph | null = await store.loadGraph();
   if (!graph) {
     logger.info("No discovery found — running discovery first...");
-    const scanner = new ProjectScanner({
-      ...config.discovery,
-      projectRoot: config.discovery.projectRoot || root,
-    });
-    graph = buildKnowledgeGraph(config, await scanner.scan());
-    await store.saveAll(graph);
+    graph = (await discoverWithCache(root, config)).graph;
   }
 
   const features = new Set(graph.features);

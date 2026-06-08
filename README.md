@@ -60,6 +60,7 @@ hqa report      # print the latest report summary + file links
 --base-url <url>             override APP_BASE_URL
 --browser <engine>           chromium | firefox | webkit
 --workers <n>                run scenarios in N parallel workers
+--retries <n>                retry failed scenarios N times (flaky detection)
 --report json|md|html|all    report format (default: all)
 --fail-fast                  stop after the first failure
 --no-video / --no-trace      disable video/trace capture
@@ -101,7 +102,7 @@ Output lands in `qa/.hqa/` (`app-knowledge-graph.json`, `routes.json`, `forms.js
 
 ## Built-in scenarios
 
-`auth.login`, `smoke.pages`, `smoke.blankScreen`,
+`auth.login`, `smoke.pages`, `smoke.blankScreen`, `explore.crawl`,
 `ecommerce.customerCreateOrder`, `ecommerce.merchantManageOrder`,
 `ecommerce.merchantBlockCustomer`, `ecommerce.blockedCustomerCannotOrder`,
 `ecommerce.orderLifecycle`, `security.rolePermissions`,
@@ -121,6 +122,27 @@ is **skipped/blocked** with a reason instead of producing a false failure.
    and HTTP 5xx; failures snapshot screenshots, traces, and video.
 5. **Report** — JSON + Markdown + HTML with severity, suspected root cause, recommended
    fix, security findings, unknowns, and required configuration.
+
+## Performance & reliability upgrades
+
+These are the features that make it punch far above ordinary test runners:
+
+- **Cached discovery.** A file-signature (path+size+mtime) cache means re-running
+  `discover`/`run` skips the whole scan when nothing changed — effectively instant on
+  large repos. Bypass with `hqa discover --force`.
+- **Parallel file scanning.** Discovery reads files with bounded concurrency
+  (`cores × 4`), not one-by-one.
+- **Auto-healing selectors.** When the primary selector for a logical name fails but a
+  fallback matches (selector drift), the run keeps going **and** the report tells you which
+  selector worked so you can promote it. Guessed-from-label selectors are flagged too.
+- **Per-page performance metrics.** Every navigation captures TTFB / DOMContentLoaded /
+  load time; set `performanceBudgetMs` to flag slow pages. Reports include a Performance
+  section with the slowest pages.
+- **Flaky detection + retries.** `--retries N` re-runs failed scenarios in fresh contexts;
+  a later pass marks the scenario **flaky** instead of red.
+- **Autonomous crawler.** `hqa run --scenario explore.crawl` explores the app like a human:
+  breadth-first across same-origin links (bounded by `HQA_CRAWL_MAX`), smoke-checking every
+  page for blank screens and server errors.
 
 ## Supported everywhere
 

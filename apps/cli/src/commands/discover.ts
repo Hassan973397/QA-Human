@@ -2,17 +2,16 @@ import ora from "ora";
 import path from "node:path";
 import {
   loadQaConfig,
-  ProjectScanner,
-  buildKnowledgeGraph,
   KnowledgeStore,
   RuleBasedAiAnalyzer,
   logger,
   pc,
 } from "@hasan-qa-humans/core";
-import { getProjectRoot, getQaDir, tsxImporter } from "../lib.js";
+import { getProjectRoot, getQaDir, discoverWithCache, tsxImporter } from "../lib.js";
 
 interface DiscoverOptions {
   cwd?: string;
+  force?: boolean;
 }
 
 export async function discoverCommand(options: DiscoverOptions): Promise<void> {
@@ -20,27 +19,21 @@ export async function discoverCommand(options: DiscoverOptions): Promise<void> {
   const { config } = await loadQaConfig({ root, importer: tsxImporter });
 
   const spinner = ora("Studying the project (reading files, routes, roles, APIs)...").start();
-  const scanner = new ProjectScanner({
-    ...config.discovery,
-    projectRoot: config.discovery.projectRoot || root,
-  });
-
-  let graph;
+  let outcome;
   try {
-    const discovery = await scanner.scan();
-    graph = buildKnowledgeGraph(config, discovery);
+    outcome = await discoverWithCache(root, config, { force: options.force });
     spinner.succeed(
-      `Discovery complete — scanned ${discovery.filesScanned} files in ${discovery.durationMs}ms.`,
+      outcome.fromCache
+        ? "Discovery served from cache (no file changes detected)."
+        : `Discovery complete — scanned ${outcome.filesScanned} files in ${outcome.durationMs}ms.`,
     );
   } catch (error) {
     spinner.fail("Discovery failed.");
     throw error;
   }
 
-  const store = new KnowledgeStore(getQaDir(root));
-  const written = await store.saveAll(graph);
+  const graph = outcome.graph;
 
-  // Summary
   logger.raw("");
   logger.raw(pc.bold("Discovery summary"));
   logger.raw(`  Frameworks:    ${graph.frameworks.join(", ") || "unknown"}`);
@@ -66,8 +59,9 @@ export async function discoverCommand(options: DiscoverOptions): Promise<void> {
     for (const u of graph.unknowns) logger.raw(`  - ${u}`);
   }
 
+  const store = new KnowledgeStore(getQaDir(root));
   logger.raw("");
   logger.raw(pc.bold("Artifacts written"));
-  for (const f of written) logger.raw(`  ${pc.dim(path.relative(root, f))}`);
+  logger.raw(`  ${pc.dim(path.relative(root, store.dir))}/ (app-knowledge-graph.json, routes.json, …, discovery-report.md)`);
   logger.success("Discovery saved under qa/.hqa/");
 }

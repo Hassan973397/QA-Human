@@ -3,8 +3,6 @@ import { spawn } from "node:child_process";
 import {
   loadQaConfig,
   KnowledgeStore,
-  ProjectScanner,
-  buildKnowledgeGraph,
   QaRunner,
   SafetyGuard,
   loadUserScenarios,
@@ -33,6 +31,7 @@ import {
   getScenariosDir,
   getReportPaths,
   makeArtifactSink,
+  discoverWithCache,
   tsxImporter,
   type ReportPaths,
 } from "../lib.js";
@@ -47,6 +46,7 @@ export interface RunOptions {
   baseUrl?: string;
   browser?: string;
   workers?: string;
+  retries?: string;
   report?: string;
   failFast?: boolean;
   video?: boolean;
@@ -135,6 +135,7 @@ async function runShard(
     environment: detectEnvironment(config.app.baseUrl),
     artifacts: makeArtifactSink(reportPaths),
     failFast: options.failFast,
+    retries: config.retries,
   });
   return runner.run(scenarios);
 }
@@ -166,6 +167,7 @@ function applyOverrides(config: QaConfig, options: RunOptions): QaConfig {
     ...config,
     app: { ...config.app, baseUrl: options.baseUrl ?? config.app.baseUrl },
     workers: options.workers ? Math.max(1, Number(options.workers)) : config.workers,
+    retries: options.retries ? Math.max(0, Number(options.retries)) : config.retries,
     browser: {
       ...config.browser,
       engine,
@@ -182,13 +184,7 @@ async function ensureGraph(root: string, config: QaConfig): Promise<AppKnowledge
   const existing = await store.loadGraph();
   if (existing) return existing;
   logger.info("No discovery found — running discovery first...");
-  const scanner = new ProjectScanner({
-    ...config.discovery,
-    projectRoot: config.discovery.projectRoot || root,
-  });
-  const graph = buildKnowledgeGraph(config, await scanner.scan());
-  await store.saveAll(graph);
-  return graph;
+  return (await discoverWithCache(root, config)).graph;
 }
 
 async function assembleScenarios(

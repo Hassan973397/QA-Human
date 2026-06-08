@@ -32,6 +32,15 @@ export interface StepResult {
   screenshots: ArtifactRef[];
 }
 
+export interface PageMetric {
+  url: string;
+  role: string;
+  ttfbMs: number;
+  domContentLoadedMs: number;
+  loadMs: number;
+  overBudget: boolean;
+}
+
 export interface ScenarioResult {
   id: string;
   title: string;
@@ -40,8 +49,13 @@ export interface ScenarioResult {
   tags: string[];
   rolesUsed: string[];
   durationMs: number;
+  /** Number of retry attempts performed (0 = passed/failed on first try). */
+  attempts: number;
+  /** True when the scenario only passed after a retry. */
+  flaky: boolean;
   steps: StepResult[];
   artifacts: ArtifactRef[];
+  metrics: PageMetric[];
   consoleErrors: ConsoleErrorEntry[];
   networkErrors: NetworkErrorEntry[];
   failureReason?: string;

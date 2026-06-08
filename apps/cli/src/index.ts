@@ -29,6 +29,7 @@ program
 program
   .command("discover")
   .description("Study the project and build the App Knowledge Graph")
+  .option("--force", "ignore the discovery cache and rescan")
   .action((opts) => guard(() => discoverCommand(opts)));
 
 program
@@ -48,6 +49,7 @@ program
   .option("--base-url <url>", "override the app base URL")
   .option("--browser <engine>", "chromium | firefox | webkit")
   .option("--workers <n>", "number of parallel workers")
+  .option("--retries <n>", "retry failed scenarios N times (flaky detection)")
   .option("--report <format>", "json | md | html | all", "all")
   .option("--fail-fast", "stop after the first failing scenario")
   .option("--no-video", "disable video recording")

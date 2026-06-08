@@ -59,6 +59,7 @@ export class HumanAgent {
         timeout: this.deps.config.browser.navigationTimeoutMs,
       });
       await waitForStablePage(this.deps.page);
+      await this.captureMetrics();
     });
   }
 
@@ -69,7 +70,41 @@ export class HumanAgent {
         timeout: this.deps.config.browser.navigationTimeoutMs,
       });
       await waitForStablePage(this.deps.page);
+      await this.captureMetrics();
     });
+  }
+
+  /** Reads navigation timing and records a page performance metric + budget flag. */
+  private async captureMetrics(): Promise<void> {
+    try {
+      const timing = await this.deps.page.evaluate(() => {
+        const nav = performance.getEntriesByType("navigation")[0] as
+          | PerformanceNavigationTiming
+          | undefined;
+        if (!nav) return null;
+        return {
+          ttfb: Math.round(nav.responseStart),
+          dcl: Math.round(nav.domContentLoadedEventEnd),
+          load: Math.round(nav.loadEventEnd || nav.domContentLoadedEventEnd),
+        };
+      });
+      if (!timing) return;
+      const budget = this.deps.config.performanceBudgetMs;
+      const overBudget = budget > 0 && timing.load > budget;
+      this.deps.reporter.recordMetric({
+        url: this.deps.page.url(),
+        role: this.role,
+        ttfbMs: timing.ttfb,
+        domContentLoadedMs: timing.dcl,
+        loadMs: timing.load,
+        overBudget,
+      });
+      this.deps.reporter.setStepDetail(
+        `load ${timing.load}ms (ttfb ${timing.ttfb}ms)${overBudget ? ` ⚠ over ${budget}ms budget` : ""}`,
+      );
+    } catch {
+      // metrics are best-effort; never fail navigation because of them
+    }
   }
 
   // ---- interactions -----------------------------------------------------

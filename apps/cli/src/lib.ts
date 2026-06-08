@@ -1,7 +1,15 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { tsImport } from "tsx/esm/api";
-import type { ConfigImporter } from "@hasan-qa-humans/core";
+import {
+  ProjectScanner,
+  KnowledgeStore,
+  buildKnowledgeGraph,
+  logger,
+  type ConfigImporter,
+  type QaConfig,
+  type AppKnowledgeGraph,
+} from "@hasan-qa-humans/core";
 import type { ArtifactDirs } from "@hasan-qa-humans/playwright-runner";
 
 /**
@@ -51,6 +59,49 @@ export function getReportPaths(root: string): ReportPaths {
     mdFile: path.join(latestDir, "report.md"),
     htmlFile: path.join(latestDir, "report.html"),
   };
+}
+
+export interface DiscoverOutcome {
+  graph: AppKnowledgeGraph;
+  fromCache: boolean;
+  filesScanned: number;
+  durationMs: number;
+}
+
+/**
+ * Discover the project with a file-signature cache. If the files haven't changed
+ * since the last scan, the cached DiscoveryResult is reused so re-runs are
+ * effectively instant. Always rebuilds the knowledge graph from current config.
+ */
+export async function discoverWithCache(
+  root: string,
+  config: QaConfig,
+  opts: { force?: boolean; persist?: boolean } = {},
+): Promise<DiscoverOutcome> {
+  const scanner = new ProjectScanner({
+    ...config.discovery,
+    projectRoot: config.discovery.projectRoot || root,
+  });
+  const store = new KnowledgeStore(getQaDir(root));
+
+  const signature = await scanner.signature();
+  const cache = opts.force ? null : await store.loadDiscoveryCache();
+
+  let discovery;
+  let fromCache = false;
+  if (cache && cache.signature === signature) {
+    discovery = cache.discovery;
+    fromCache = true;
+    logger.debug("discovery cache hit");
+  } else {
+    discovery = await scanner.scan();
+    await store.saveDiscoveryCache(signature, discovery);
+  }
+
+  const graph = buildKnowledgeGraph(config, discovery);
+  if (opts.persist !== false) await store.saveAll(graph);
+
+  return { graph, fromCache, filesScanned: discovery.filesScanned, durationMs: discovery.durationMs };
 }
 
 /** ArtifactSink implementation that relativizes paths against the report dir. */

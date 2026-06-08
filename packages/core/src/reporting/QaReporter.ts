@@ -13,6 +13,7 @@ import type {
   StepStatus,
   RequiredConfigItem,
   DiscoverySummary,
+  PageMetric,
 } from "./types.js";
 
 export interface ScenarioMeta {
@@ -42,8 +43,11 @@ export class ScenarioReporter {
       tags: meta.tags,
       rolesUsed: [],
       durationMs: 0,
+      attempts: 0,
+      flaky: false,
       steps: [],
       artifacts: [],
+      metrics: [],
       consoleErrors: [],
       networkErrors: [],
     };
@@ -79,6 +83,10 @@ export class ScenarioReporter {
 
   addArtifact(ref: ArtifactRef): void {
     this.result.artifacts.push(ref);
+  }
+
+  recordMetric(metric: PageMetric): void {
+    this.result.metrics.push(metric);
   }
 
   recordConsoleError(entry: ConsoleErrorEntry): void {

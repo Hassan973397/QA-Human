@@ -20,6 +20,8 @@ export interface QaRunnerOptions {
   artifacts: ArtifactSink;
   environment: string;
   failFast?: boolean;
+  /** Retry failed scenarios up to N times; a later pass marks them flaky. */
+  retries?: number;
 }
 
 /**
@@ -34,7 +36,12 @@ export class QaRunner {
 
   constructor(private readonly opts: QaRunnerOptions) {
     const registry = new SelectorRegistry(opts.graph.selectors);
-    this.resolver = new SelectorResolver(registry);
+    this.resolver = new SelectorResolver(registry, (event) => {
+      const message = event.registered
+        ? `Selector "${event.name}" healed: matched fallback "${event.used}" (primary "${event.primary}" failed). Promote the working selector in qa.config.ts.`
+        : `Selector "${event.name}" was guessed at runtime via "${event.used}". Add a stable data-testid or a named selector for reliability.`;
+      this.reporter.addRequiredConfig({ kind: "selector", message });
+    });
     this.reporter = new QaReporter({
       appName: opts.config.app.name,
       baseUrl: opts.config.app.baseUrl,
@@ -69,19 +76,13 @@ export class QaRunner {
   }
 
   private async runScenario(def: ScenarioDefinition): Promise<ScenarioStatus> {
-    const reporter = this.reporter.startScenario({
-      id: def.id,
-      title: def.title,
-      severity: def.severity,
-      tags: def.tags,
-    });
-
     // Feature gate -> blocked (a missing prerequisite, not a failure).
     const missingFeature = (def.requiresFeatures ?? []).find(
       (f) => !this.opts.graph.features.includes(f),
     );
     if (missingFeature) {
-      const result = reporter.finish("blocked", {
+      const gate = this.reporter.startScenario(this.meta(def));
+      const result = gate.finish("blocked", {
         skipReason: `Required feature not detected in discovery: ${missingFeature}`,
       });
       this.reporter.completeScenario(result);
@@ -89,6 +90,34 @@ export class QaRunner {
       return "blocked";
     }
 
+    const maxAttempts = (this.opts.retries ?? 0) + 1;
+    let attempt = 0;
+    let last!: { reporter: ScenarioReporter; status: ScenarioStatus };
+
+    while (attempt < maxAttempts) {
+      attempt++;
+      last = await this.attempt(def);
+      // Only retry genuine failures.
+      if (last.status !== "failed") break;
+      if (attempt < maxAttempts) {
+        logger.debug(`retrying ${def.id} (attempt ${attempt + 1}/${maxAttempts})`);
+      }
+    }
+
+    const result = last.reporter.result;
+    result.attempts = attempt - 1;
+    result.flaky = last.status === "passed" && attempt > 1;
+    this.captureSecurityFindings(def, last.reporter, last.status);
+    this.reporter.completeScenario(result);
+    this.log(def, last.status, result.flaky);
+    return last.status;
+  }
+
+  /** A single execution attempt with fresh contexts + reporter. */
+  private async attempt(
+    def: ScenarioDefinition,
+  ): Promise<{ reporter: ScenarioReporter; status: ScenarioStatus }> {
+    const reporter = this.reporter.startScenario(this.meta(def));
     await this.opts.engine.beginScenario(def.id);
     const factory = new HumanFactory({
       resolver: this.resolver,
@@ -100,7 +129,6 @@ export class QaRunner {
 
     let status: ScenarioStatus = "passed";
     let info: { failureReason?: string; skipReason?: string } = {};
-
     try {
       const humansMap = await this.prepareHumans(def, factory, reporter);
       const ctx = buildScenarioContext({
@@ -121,12 +149,13 @@ export class QaRunner {
       }
     }
 
-    const result = reporter.finish(status, info);
+    reporter.finish(status, info);
     await this.opts.engine.finishScenario(def.id, status, reporter);
-    this.captureSecurityFindings(def, reporter, status);
-    this.reporter.completeScenario(result);
-    this.log(def, status);
-    return status;
+    return { reporter, status };
+  }
+
+  private meta(def: ScenarioDefinition) {
+    return { id: def.id, title: def.title, severity: def.severity, tags: def.tags };
   }
 
   /**
@@ -195,7 +224,7 @@ export class QaRunner {
     }
   }
 
-  private log(def: ScenarioDefinition, status: ScenarioStatus): void {
+  private log(def: ScenarioDefinition, status: ScenarioStatus, flaky = false): void {
     const tag =
       status === "passed"
         ? pc.green("PASS")
@@ -204,6 +233,6 @@ export class QaRunner {
           : status === "blocked"
             ? pc.gray("BLOCK")
             : pc.yellow("SKIP");
-    logger.raw(`  ${tag} ${def.id} — ${def.title}`);
+    logger.raw(`  ${tag} ${def.id} — ${def.title}${flaky ? pc.magenta(" (flaky)") : ""}`);
   }
 }

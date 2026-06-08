@@ -59,6 +59,9 @@ export default defineQaConfig({
     "security.rolePermissions",
     "security.tenantIsolation",
   ],
+  workers: 1,
+  retries: 0,
+  performanceBudgetMs: 1500,
   safety: {
     testDataPrefix: "AUTO_HQA",
     allowDeleteOnlyWithPrefix: true,

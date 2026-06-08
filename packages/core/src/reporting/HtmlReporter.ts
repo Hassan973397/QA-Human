@@ -84,6 +84,13 @@ function scenarioBlock(sc: ScenarioResult): string {
     )
     .join("");
   const meta: string[] = [];
+  if (sc.flaky) meta.push(`<div class="muted">⚠️ Flaky — passed after ${sc.attempts} retry(ies)</div>`);
+  if (sc.metrics.length) {
+    const slow = [...sc.metrics].sort((a, b) => b.loadMs - a.loadMs)[0]!;
+    meta.push(
+      `<div class="muted">Perf: slowest load ${slow.loadMs}ms (ttfb ${slow.ttfbMs}ms)${slow.overBudget ? " ⚠ over budget" : ""}</div>`,
+    );
+  }
   if (sc.failureReason) meta.push(`<div class="err">Failure: ${esc(sc.failureReason)}</div>`);
   if (sc.skipReason) meta.push(`<div class="muted">Skip: ${esc(sc.skipReason)}</div>`);
   if (sc.suspectedRootCause) meta.push(`<div class="muted">Root cause: ${esc(sc.suspectedRootCause)}</div>`);

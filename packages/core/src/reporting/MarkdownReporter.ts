@@ -31,6 +31,8 @@ export function renderMarkdownReport(report: QaReport): string {
     l.push(`- Features: ${report.discovery.features.join(", ") || "none"}`);
   }
 
+  l.push(...renderPerformance(report));
+
   l.push("");
   l.push("## Scenarios");
   for (const sc of report.scenarios) l.push(...renderScenario(sc));
@@ -56,13 +58,32 @@ export function renderMarkdownReport(report: QaReport): string {
   return l.join("\n") + "\n";
 }
 
+function renderPerformance(report: QaReport): string[] {
+  const metrics = report.scenarios.flatMap((s) => s.metrics);
+  if (metrics.length === 0) return [];
+  const slowest = [...metrics].sort((a, b) => b.loadMs - a.loadMs).slice(0, 10);
+  const overBudget = metrics.filter((m) => m.overBudget);
+  const l: string[] = ["", "## Performance"];
+  l.push(`Captured ${metrics.length} page load(s).${overBudget.length ? ` ⚠ ${overBudget.length} over budget.` : ""}`);
+  l.push("");
+  l.push("Slowest pages:");
+  for (const m of slowest) {
+    l.push(`- ${m.loadMs}ms (ttfb ${m.ttfbMs}ms) — \`${m.url}\` [${m.role}]${m.overBudget ? " ⚠" : ""}`);
+  }
+  return l;
+}
+
 function renderScenario(sc: ScenarioResult): string[] {
   const l: string[] = [];
   l.push("");
-  l.push(`### ${STATUS_EMOJI[sc.status] ?? ""} ${sc.title} \`(${sc.id})\``);
+  l.push(`### ${STATUS_EMOJI[sc.status] ?? ""} ${sc.title} \`(${sc.id})\`${sc.flaky ? " ⚠️ flaky" : ""}`);
   l.push(
-    `- Status: **${sc.status}** | Severity: ${sc.severity} | Duration: ${formatDuration(sc.durationMs)}`,
+    `- Status: **${sc.status}** | Severity: ${sc.severity} | Duration: ${formatDuration(sc.durationMs)}${sc.attempts > 0 ? ` | Retries: ${sc.attempts}` : ""}`,
   );
+  if (sc.metrics.length) {
+    const slow = [...sc.metrics].sort((a, b) => b.loadMs - a.loadMs)[0]!;
+    l.push(`- Slowest load: ${slow.loadMs}ms (\`${slow.url}\`)`);
+  }
   if (sc.rolesUsed.length) l.push(`- Roles: ${sc.rolesUsed.join(", ")}`);
   if (sc.tags.length) l.push(`- Tags: ${sc.tags.join(", ")}`);
   if (sc.skipReason) l.push(`- Skip reason: ${sc.skipReason}`);
