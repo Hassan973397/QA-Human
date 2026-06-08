@@ -257,6 +257,9 @@ const DOMAIN_LABEL: Record<string, string> = {
   links: "Links & assets",
   forms: "Form validation",
   code: "Code & backend (static)",
+  content: "Content & i18n",
+  performance: "Performance & Web Vitals",
+  security: "Frontend security",
 };
 
 /** قسم «مراجعة شاملة» — ملاحظات مجمّعة حسب الطبقة ثم الصفحة. */

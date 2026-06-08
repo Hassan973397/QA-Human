@@ -23,6 +23,9 @@ import apiSecurity from "./review/apiSecurity.js";
 import linksIntegrity from "./review/linksIntegrity.js";
 import formsValidation from "./review/formsValidation.js";
 import staticCodeAudit from "./review/staticAudit.js";
+import contentSanity from "./review/contentSanity.js";
+import perfVitals from "./review/perfVitals.js";
+import frontendSecurity from "./review/frontendSecurity.js";
 
 export {
   authLogin,
@@ -39,6 +42,9 @@ export {
   linksIntegrity,
   formsValidation,
   staticCodeAudit,
+  contentSanity,
+  perfVitals,
+  frontendSecurity,
   customerCreateOrder,
   merchantManageOrder,
   merchantBlockCustomer,
@@ -75,6 +81,9 @@ export const builtinScenarios: ScenarioDefinition[] = [
   linksIntegrity,
   formsValidation,
   staticCodeAudit,
+  contentSanity,
+  perfVitals,
+  frontendSecurity,
 ];
 
 /** Look up built-in scenarios by id, with substring fallback. */

@@ -10,6 +10,9 @@ import { auditPageHeuristics } from "../quality/uxHeuristics.js";
 import { auditUiQuality, checkHorizontalOverflow } from "../quality/uiQuality.js";
 import { auditSeo } from "../quality/seoAudit.js";
 import { auditForms } from "../quality/formAudit.js";
+import { auditContentSanity } from "../quality/contentSanity.js";
+import { auditWebVitals } from "../quality/webVitals.js";
+import { auditFrontendSecurity } from "../quality/securityHeuristics.js";
 import type { ArtifactRef, A11yViolation, UxFinding } from "../reporting/types.js";
 import { humanClick, humanFill, humanType } from "./HumanAction.js";
 import {
@@ -423,6 +426,21 @@ export class HumanAgent {
   /** يفحص تحقّق نماذج الصفحة الحالية (آمن بلا إرسال). */
   async reviewForms(scopeLabel?: string): Promise<void> {
     await this.recordPageFindings("forms review", scopeLabel, auditForms);
+  }
+
+  /** يفحص سلامة المحتوى المعروض واتجاه RTL للصفحة الحالية. */
+  async reviewContent(scopeLabel?: string): Promise<void> {
+    await this.recordPageFindings("content review", scopeLabel, auditContentSanity);
+  }
+
+  /** يقيس أداء الصفحة وCore Web Vitals. */
+  async reviewVitals(scopeLabel?: string): Promise<void> {
+    await this.recordPageFindings("web vitals", scopeLabel, auditWebVitals);
+  }
+
+  /** يفحص أمان الصفحة الأمامي (محتوى مختلط، noopener، CSRF، كلمات المرور). */
+  async reviewSecurity(scopeLabel?: string): Promise<void> {
+    await this.recordPageFindings("security review", scopeLabel, auditFrontendSecurity);
   }
 
   /** يفحص كسر التخطيط عند المقاس الحالي (يُستعمل بعد تغيير حجم النافذة). */

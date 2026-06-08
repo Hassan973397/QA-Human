@@ -47,6 +47,7 @@ export interface ReportPaths extends ArtifactDirs {
   jsonFile: string;
   mdFile: string;
   htmlFile: string;
+  junitFile: string;
   artifactsDir: string;
 }
 
@@ -63,6 +64,7 @@ export function getReportPaths(root: string): ReportPaths {
     jsonFile: path.join(latestDir, "report.json"),
     mdFile: path.join(latestDir, "report.md"),
     htmlFile: path.join(latestDir, "report.html"),
+    junitFile: path.join(latestDir, "junit.xml"),
   };
 }
 

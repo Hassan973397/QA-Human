@@ -10,6 +10,7 @@ import {
   renderJsonReport,
   renderMarkdownReport,
   renderHtmlReport,
+  renderJUnitReport,
   RuleBasedAiAnalyzer,
   LlmAiAnalyzer,
   writeText,
@@ -58,6 +59,7 @@ export interface RunOptions {
   open?: boolean;
   updateSnapshots?: boolean;
   verbose?: boolean;
+  ci?: boolean;
 }
 
 export async function runCommand(options: RunOptions): Promise<void> {
@@ -111,10 +113,11 @@ export async function runCommand(options: RunOptions): Promise<void> {
       : await runParallel(scenarios, workers, config, graph, artifacts, reportPaths, options);
 
   await enrichFailures(report);
-  await writeReports(report, reportPaths, options.report ?? "all");
+  await writeReports(report, reportPaths, options.report ?? "all", options.ci);
   await saveHistory(root, reportPaths);
 
   printSummary(root, report, reportPaths);
+  if (options.ci) emitCiAnnotations(report, reportPaths);
   if (options.open) openHtml(reportPaths.htmlFile);
   if (report.summary.failed > 0) process.exitCode = 1;
 }
@@ -166,7 +169,11 @@ async function runParallel(
 }
 
 function applyOverrides(config: QaConfig, options: RunOptions): QaConfig {
-  const headless = options.headed ? false : options.headless ? true : config.browser.headless;
+  const headless = options.headed
+    ? false
+    : options.headless || options.ci
+      ? true
+      : config.browser.headless;
   const engine = (options.browser as QaConfig["browser"]["engine"]) || config.browser.engine;
   return {
     ...config,
@@ -239,11 +246,36 @@ async function enrichFailures(report: QaReport): Promise<void> {
   }
 }
 
-async function writeReports(report: QaReport, paths: ReportPaths, format: string): Promise<void> {
+async function writeReports(report: QaReport, paths: ReportPaths, format: string, ci?: boolean): Promise<void> {
   const want = (f: string) => format === "all" || format === f;
   if (want("json")) await writeText(paths.jsonFile, renderJsonReport(report));
   if (want("md")) await writeText(paths.mdFile, renderMarkdownReport(report));
   if (want("html")) await writeText(paths.htmlFile, renderHtmlReport(report));
+  // JUnit يُكتب دائماً في وضع CI، أو عند طلبه صراحةً
+  if (want("junit") || ci) await writeText(paths.junitFile, renderJUnitReport(report));
+}
+
+/**
+ * يطبع تعليقات بصيغة GitHub Actions (::error/::warning) للفشل والنتائج الأمنية
+ * كي تظهر مباشرةً في واجهة الـ PR وملخّص التشغيل.
+ */
+function emitCiAnnotations(report: QaReport, paths: ReportPaths): void {
+  for (const sc of report.scenarios) {
+    if (sc.status === "failed") {
+      const msg = (sc.failureReason || sc.suspectedRootCause || "scenario failed").replace(/\n/g, " ");
+      logger.raw(`::error title=QA failed: ${sc.id}::${msg}`);
+    }
+  }
+  for (const f of report.securityFindings) {
+    logger.raw(`::error title=Security (${f.kind})::[${f.severity}] ${f.message}`);
+  }
+  const important = report.scenarios
+    .flatMap((s) => s.uxFindings)
+    .filter((f) => f.severity === "critical" || f.severity === "high");
+  for (const f of important.slice(0, 20)) {
+    logger.raw(`::warning title=${f.domain ?? "review"}: ${f.title}::${f.scope} — ${f.suggestion}`);
+  }
+  logger.raw(`::notice title=QA report::JUnit at ${paths.junitFile}`);
 }
 
 /** Keep a timestamped copy of each run for history + comparison. */

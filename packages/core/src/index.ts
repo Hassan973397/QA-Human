@@ -57,6 +57,7 @@ export { QaReporter, ScenarioReporter, type ScenarioMeta } from "./reporting/QaR
 export { renderMarkdownReport } from "./reporting/MarkdownReporter.js";
 export { renderJsonReport } from "./reporting/JsonReporter.js";
 export { renderHtmlReport } from "./reporting/HtmlReporter.js";
+export { renderJUnitReport } from "./reporting/JUnitReporter.js";
 export { classifyFailure } from "./reporting/SeverityClassifier.js";
 export { gradeReport, type QaGrade } from "./reporting/QaGrade.js";
 export * from "./reporting/types.js";
@@ -86,6 +87,9 @@ export { auditSeo } from "./quality/seoAudit.js";
 export { auditApi } from "./quality/apiAudit.js";
 export { auditForms } from "./quality/formAudit.js";
 export { auditStaticCode } from "./quality/staticAudit.js";
+export { auditContentSanity } from "./quality/contentSanity.js";
+export { auditWebVitals } from "./quality/webVitals.js";
+export { auditFrontendSecurity } from "./quality/securityHeuristics.js";
 
 // Safety
 export { SafetyGuard, type SafetyDecision } from "./safety/SafetyGuard.js";

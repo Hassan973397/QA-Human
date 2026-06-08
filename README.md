@@ -133,7 +133,10 @@ images, layout), `ui.responsive` (phone/tablet), `seo.audit` (title/description/
 canonical/OpenGraph), `api.security` (security headers, cookies, errors),
 `links.integrity` (broken links/assets), `forms.validation` (input validation,
 no submission), `audit.static` (secrets, SQL injection, money-as-float, eval, XSS,
-exposed `.env` — backend & database at the source level).
+exposed `.env` — backend & database at the source level), `content.sanity`
+(undefined/NaN/[object Object]/Invalid Date/placeholders + RTL direction),
+`perf.vitals` (LCP/CLS/TBT, page weight, request count), `security.frontend`
+(mixed content, tabnabbing, CSRF hints, password autocomplete).
 
 Every report opens with an overall **QA score (A+…F)** and an executive verdict,
 and groups review findings by layer with a fix suggestion each.
@@ -254,6 +257,21 @@ The packages publish to npm automatically when a version tag is pushed (requires
 ```bash
 git tag v1.0.0 && git push origin v1.0.0   # triggers .github/workflows/release.yml
 ```
+
+## CI/CD integration
+
+Run in any pipeline with `--ci`: it forces headless, writes JUnit XML, prints
+GitHub Actions annotations for failures/security findings, and exits non-zero when
+any scenario fails (so the build breaks on regressions).
+
+```yaml
+# .github/workflows/qa.yml
+- run: npx hqa run --base-url "$STAGING_URL" --ci
+# → qa/reports/latest/junit.xml, ::error annotations, exit 1 on failure
+```
+
+`--report junit` writes the JUnit file without full CI mode; `--report all`
+includes JSON, Markdown, HTML, and JUnit together.
 
 ## Safety
 

@@ -4,6 +4,7 @@ import { QaReporter, mergeReports } from "../src/reporting/QaReporter.js";
 import { renderHtmlReport } from "../src/reporting/HtmlReporter.js";
 import { renderJsonReport } from "../src/reporting/JsonReporter.js";
 import { gradeReport } from "../src/reporting/QaGrade.js";
+import { renderJUnitReport } from "../src/reporting/JUnitReporter.js";
 
 function makeReport(scenarios: Array<{ id: string; status: "passed" | "failed" | "skipped"; tags?: string[] }>) {
   const reporter = new QaReporter({ appName: "App", baseUrl: "http://localhost", environment: "local" });
@@ -70,6 +71,19 @@ test("gradeReport scores a clean run high and a broken run low", () => {
   ]));
   assert.ok(broken.score < clean.score);
   assert.equal(broken.failed, 2);
+});
+
+test("JUnit report is well-formed and maps statuses", () => {
+  const xml = renderJUnitReport(makeReport([
+    { id: "ok", status: "passed" },
+    { id: "bad", status: "failed" },
+    { id: "sk", status: "skipped" },
+  ]));
+  assert.match(xml, /<\?xml/);
+  assert.match(xml, /tests="3"/);
+  assert.match(xml, /failures="1"/);
+  assert.match(xml, /<failure /);
+  assert.match(xml, /<skipped /);
 });
 
 test("gradeReport never goes below zero", () => {
