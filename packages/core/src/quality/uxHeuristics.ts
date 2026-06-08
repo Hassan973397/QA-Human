@@ -12,6 +12,8 @@ export interface RawUxFinding {
   detail: string;
   suggestion: string;
   selector?: string;
+  /** الطبقة (ux افتراضياً): ui | seo | responsive | api | links. */
+  domain?: string;
 }
 
 /**
