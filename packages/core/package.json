@@ -41,5 +41,29 @@
   "devDependencies": {
     "playwright": "^1.49.0",
     "@types/pngjs": "^6.0.5"
+  },
+  "author": "Hasan QA Humans contributors",
+  "keywords": [
+    "qa",
+    "testing",
+    "playwright",
+    "e2e",
+    "automation",
+    "accessibility",
+    "visual-regression",
+    "discovery",
+    "knowledge-graph"
+  ],
+  "homepage": "https://github.com/Hassan973397/QA-Human#readme",
+  "bugs": {
+    "url": "https://github.com/Hassan973397/QA-Human/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hassan973397/QA-Human.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

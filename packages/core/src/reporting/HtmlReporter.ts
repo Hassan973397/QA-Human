@@ -26,13 +26,19 @@ export function renderHtmlReport(report: QaReport): string {
 <title>QA Report — ${esc(report.appName)}</title>
 <style>
   :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
   body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; background:#0b0f14; color:#e6edf3; }
-  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px; }
   h1 { margin: 0 0 4px; }
+  h2 { margin-top: 28px; }
   .muted { color:#9aa7b4; font-size: 14px; }
-  .cards { display:flex; gap:12px; flex-wrap:wrap; margin:20px 0; }
-  .card { background:#131a22; border:1px solid #1f2933; border-radius:10px; padding:14px 18px; min-width:110px; }
-  .card .n { font-size:26px; font-weight:700; }
+  .top { display:flex; gap:24px; flex-wrap:wrap; align-items:center; margin:20px 0; }
+  .cards { display:flex; gap:10px; flex-wrap:wrap; }
+  .card { background:#131a22; border:1px solid #1f2933; border-radius:10px; padding:12px 16px; min-width:96px; cursor:pointer; transition:border-color .15s, transform .05s; }
+  .card:hover { border-color:#2f3b49; }
+  .card.active { border-color:#60a5fa; box-shadow:0 0 0 1px #60a5fa inset; }
+  .card .n { font-size:24px; font-weight:700; }
+  .card .l { font-size:12px; }
   .scenario { background:#131a22; border:1px solid #1f2933; border-radius:10px; padding:16px; margin:12px 0; }
   .badge { display:inline-block; padding:2px 10px; border-radius:999px; color:#fff; font-size:12px; font-weight:600; }
   .step { padding:3px 0; font-size:14px; border-bottom:1px dashed #1f2933; }
@@ -41,29 +47,93 @@ export function renderHtmlReport(report: QaReport): string {
   details { margin-top:8px; } summary { cursor:pointer; }
   .err { color:#fca5a5; font-size:13px; }
   a { color:#60a5fa; }
+  .toolbar { display:flex; gap:10px; align-items:center; margin:8px 0 4px; flex-wrap:wrap; }
+  input[type=search] { background:#0b0f14; border:1px solid #1f2933; border-radius:8px; color:#e6edf3; padding:8px 12px; min-width:220px; }
+  .bar-row { display:flex; align-items:center; gap:10px; font-size:13px; margin:4px 0; }
+  .bar-track { flex:1; background:#0b0f14; border-radius:6px; height:14px; overflow:hidden; border:1px solid #1f2933; }
+  .bar-fill { height:100%; background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+  .bar-row.over .bar-fill { background:linear-gradient(90deg,#dc2626,#fca5a5); }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; }
+  .legend span::before { content:"●"; margin-right:5px; }
+  .hidden { display:none !important; }
 </style>
 </head>
 <body><div class="wrap">
   <h1>QA Report — ${esc(report.appName)}</h1>
   <div class="muted">${esc(report.baseUrl)} · ${esc(report.environment)} · ${esc(report.startedAt)} · ${formatDuration(report.durationMs)}</div>
-  <div class="cards">
-    ${card("Total", s.total, "#3b82f6")}
-    ${card("Passed", s.passed, STATUS_COLOR.passed!)}
-    ${card("Failed", s.failed, STATUS_COLOR.failed!)}
-    ${card("Skipped", s.skipped, STATUS_COLOR.skipped!)}
-    ${card("Blocked", s.blocked, STATUS_COLOR.blocked!)}
+
+  <div class="top">
+    ${donut(s)}
+    <div>
+      <div class="cards">
+        ${card("Total", s.total, "#3b82f6", "all")}
+        ${card("Passed", s.passed, STATUS_COLOR.passed!, "passed")}
+        ${card("Failed", s.failed, STATUS_COLOR.failed!, "failed")}
+        ${card("Skipped", s.skipped, STATUS_COLOR.skipped!, "skipped")}
+        ${card("Blocked", s.blocked, STATUS_COLOR.blocked!, "blocked")}
+      </div>
+      <div class="muted" style="margin-top:8px">Click a card or chart legend to filter scenarios.</div>
+    </div>
   </div>
+
   ${report.discovery ? discoveryBlock(report) : ""}
+  ${performanceBlock(report)}
+
   <h2>Scenarios</h2>
-  ${report.scenarios.map(scenarioBlock).join("\n")}
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="Filter scenarios by id or title…" />
+    <span class="muted" id="count"></span>
+  </div>
+  <div id="scenarios">
+    ${report.scenarios.map(scenarioBlock).join("\n")}
+  </div>
+
   ${securityBlock(report)}
   ${listBlock("Unknowns", report.unknowns)}
   ${listBlock("Required Configuration", report.requiredConfig.map((r) => `${r.kind}: ${r.message}`))}
-</div></body></html>`;
+</div>
+${filterScript()}
+</body></html>`;
 }
 
-function card(label: string, n: number, color: string): string {
-  return `<div class="card"><div class="n" style="color:${color}">${n}</div><div class="muted">${label}</div></div>`;
+/** SVG donut chart of the status breakdown, built from stacked stroked circles. */
+function donut(s: QaReport["summary"]): string {
+  const segments: Array<[string, number, string]> = [
+    ["passed", s.passed, STATUS_COLOR.passed!],
+    ["failed", s.failed, STATUS_COLOR.failed!],
+    ["skipped", s.skipped, STATUS_COLOR.skipped!],
+    ["blocked", s.blocked, STATUS_COLOR.blocked!],
+  ];
+  const total = s.total || 1;
+  const r = 54;
+  const c = 2 * Math.PI * r;
+  let offset = 0;
+  const circles = segments
+    .filter(([, v]) => v > 0)
+    .map(([, v, color]) => {
+      const len = (v / total) * c;
+      const circle = `<circle cx="70" cy="70" r="${r}" fill="none" stroke="${color}" stroke-width="16" stroke-dasharray="${len.toFixed(2)} ${(c - len).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 70 70)" />`;
+      offset += len;
+      return circle;
+    })
+    .join("");
+  const legend = segments
+    .map(([label, v, color]) => `<span style="color:${color}">${label} ${v}</span>`)
+    .join("");
+  const passRate = s.total ? Math.round((s.passed / s.total) * 100) : 0;
+  return `<div>
+    <svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="status donut">
+      <circle cx="70" cy="70" r="54" fill="none" stroke="#1f2933" stroke-width="16" />
+      ${circles}
+      <text x="70" y="66" text-anchor="middle" font-size="26" font-weight="700" fill="#e6edf3">${passRate}%</text>
+      <text x="70" y="86" text-anchor="middle" font-size="11" fill="#9aa7b4">pass rate</text>
+    </svg>
+    <div class="legend" style="max-width:160px">${legend}</div>
+  </div>`;
+}
+
+function card(label: string, n: number, color: string, filter: string): string {
+  return `<div class="card${filter === "all" ? " active" : ""}" data-filter="${filter}"><div class="n" style="color:${color}">${n}</div><div class="l muted">${label}</div></div>`;
 }
 
 function discoveryBlock(report: QaReport): string {
@@ -73,6 +143,34 @@ function discoveryBlock(report: QaReport): string {
     Routes: ${d.routes} · API: ${d.apiEndpoints} ·
     Roles: ${esc(d.roles.join(", ") || "none")} ·
     Features: ${esc(d.features.join(", ") || "none")}</div></div>`;
+}
+
+/** Horizontal bar chart of the slowest page loads captured across all scenarios. */
+function performanceBlock(report: QaReport): string {
+  const metrics = report.scenarios.flatMap((sc) => sc.metrics);
+  if (metrics.length === 0) return "";
+  const slowest = [...metrics].sort((a, b) => b.loadMs - a.loadMs).slice(0, 8);
+  const max = slowest[0]!.loadMs || 1;
+  const rows = slowest
+    .map((m) => {
+      const pct = Math.max(3, Math.round((m.loadMs / max) * 100));
+      return `<div class="bar-row${m.overBudget ? " over" : ""}">
+        <div style="flex:1;min-width:0"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></div>
+        <div style="width:80px;text-align:right">${m.loadMs}ms</div>
+        <div class="muted" style="width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.url)}">${esc(shortUrl(m.url))}</div>
+      </div>`;
+    })
+    .join("");
+  return `<h2>Performance</h2><div class="scenario">${rows}</div>`;
+}
+
+function shortUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.pathname + (u.search || "");
+  } catch {
+    return url;
+  }
 }
 
 function scenarioBlock(sc: ScenarioResult): string {
@@ -111,7 +209,8 @@ function scenarioBlock(sc: ScenarioResult): string {
   const artifacts = sc.artifacts
     .map((a) => `<a href="${esc(a.path)}">${a.type}</a>`)
     .join(" · ");
-  return `<div class="scenario">
+  const haystack = esc(`${sc.id} ${sc.title} ${sc.tags.join(" ")}`.toLowerCase());
+  return `<div class="scenario" data-scenario data-status="${sc.status}" data-search="${haystack}">
     <div><span class="badge" style="background:${color}">${sc.status}</span>
     <strong> ${esc(sc.title)}</strong> <code>${esc(sc.id)}</code></div>
     <div class="muted">severity: ${sc.severity} · ${formatDuration(sc.durationMs)} · roles: ${esc(sc.rolesUsed.join(", ") || "—")}</div>
@@ -132,4 +231,38 @@ function securityBlock(report: QaReport): string {
 function listBlock(title: string, items: string[]): string {
   if (items.length === 0) return `<h2>${title}</h2><p class="muted">None.</p>`;
   return `<h2>${title}</h2><ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
+}
+
+/** Self-contained vanilla-JS filtering + search (no external dependencies). */
+function filterScript(): string {
+  return `<script>
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('[data-scenario]'));
+  var search = document.getElementById('search');
+  var count = document.getElementById('count');
+  var filters = Array.prototype.slice.call(document.querySelectorAll('[data-filter]'));
+  var status = 'all';
+  function apply(){
+    var q = (search && search.value || '').toLowerCase();
+    var shown = 0;
+    cards.forEach(function(c){
+      var okStatus = status === 'all' || c.getAttribute('data-status') === status;
+      var okQuery = !q || c.getAttribute('data-search').indexOf(q) !== -1;
+      var show = okStatus && okQuery;
+      c.classList.toggle('hidden', !show);
+      if (show) shown++;
+    });
+    if (count) count.textContent = shown + ' / ' + cards.length + ' shown';
+  }
+  filters.forEach(function(b){
+    b.addEventListener('click', function(){
+      status = b.getAttribute('data-filter');
+      filters.forEach(function(x){ x.classList.toggle('active', x === b); });
+      apply();
+    });
+  });
+  if (search) search.addEventListener('input', apply);
+  apply();
+})();
+</script>`;
 }
