@@ -1,5 +1,7 @@
 # Hasan QA Humans
 
+[![CI](https://github.com/Hassan973397/QA-Human/actions/workflows/ci.yml/badge.svg)](https://github.com/Hassan973397/QA-Human/actions/workflows/ci.yml)
+
 > A human-like QA engine on top of Playwright. It **studies your app first**, builds an
 > App Knowledge Graph, then drives the browser as if a real QA team logged in with
 > different roles, clicked around, filled forms, created orders, changed statuses,
