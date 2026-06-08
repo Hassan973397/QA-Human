@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { logger, pc, QaError } from "@hasan-qa-humans/core";
+import { logger, QaError } from "@hasan-qa-humans/core";
 import { initCommand } from "./commands/init.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { discoverCommand } from "./commands/discover.js";

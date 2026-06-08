@@ -11,9 +11,9 @@
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b --watch",
-    "typecheck": "tsc -b --noEmit || tsc -b",
+    "typecheck": "tsc -b",
     "clean": "tsc -b --clean && rimraf \"packages/*/dist\" \"apps/*/dist\" \"**/*.tsbuildinfo\"",
-    "lint": "eslint . --ext .ts || echo 'eslint not configured, skipping'",
+    "lint": "eslint .",
     "test": "node --test || echo 'no tests yet'",
     "hqa": "node apps/cli/dist/index.js"
   },
@@ -22,6 +22,10 @@
     "@types/node": "^22.10.0",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "eslint": "^9.17.0",
+    "@eslint/js": "^9.17.0",
+    "typescript-eslint": "^8.18.0",
+    "globals": "^15.14.0"
   }
 }

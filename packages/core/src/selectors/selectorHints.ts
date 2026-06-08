@@ -15,5 +15,5 @@ export function hintsForLabel(label: string): string[] {
 
 /** Whether a string looks like a raw CSS/Playwright selector rather than a name. */
 export function looksLikeSelector(value: string): boolean {
-  return /[#.\[\]>:]|^text=|^xpath=|has-text|data-testid/.test(value);
+  return /[#.[\]>:]|^text=|^xpath=|has-text|data-testid/.test(value);
 }
