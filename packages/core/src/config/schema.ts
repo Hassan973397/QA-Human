@@ -33,6 +33,12 @@ export const browserConfigSchema = z.object({
     .default({ width: 1440, height: 900 }),
   defaultTimeoutMs: z.number().default(15000),
   navigationTimeoutMs: z.number().default(30000),
+  /**
+   * يعيد استخدام سياق المتصفح لكل دور عبر كل السيناريوهات (نافذة واحدة لكل دور،
+   * تسجيل دخول مرة واحدة). أوقفه لسلوك «سياق جديد لكل سيناريو» (فيديو مستقل لكل
+   * سيناريو لكن نوافذ أكثر وتسجيل دخول متكرّر).
+   */
+  reuseContexts: z.boolean().default(true),
 });
 
 export const discoveryConfigSchema = z.object({

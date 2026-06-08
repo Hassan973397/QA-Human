@@ -1,21 +1,23 @@
 import type { Page } from "playwright";
-import type { ScenarioReporter } from "@hasan-qa-humans/core";
 import { nowIso } from "@hasan-qa-humans/core";
+import type { ReporterRef } from "./BrowserRoleContext.js";
 
 /**
  * Attaches console + page error listeners. Only genuine errors are recorded;
- * warnings and info logs are ignored so the report isn't noisy.
+ * warnings and info logs are ignored so the report isn't noisy. Writes to the
+ * *currently active* reporter via a ref, so a reused page reports into whichever
+ * scenario is running now.
  */
-export function attachErrorsWatcher(page: Page, reporter: ScenarioReporter): void {
+export function attachErrorsWatcher(page: Page, ref: ReporterRef): void {
   page.on("console", (msg) => {
     if (msg.type() !== "error") return;
     const text = msg.text();
     if (isNoise(text)) return;
-    reporter.recordConsoleError({ text, url: page.url(), at: nowIso() });
+    ref.current?.recordConsoleError({ text, url: page.url(), at: nowIso() });
   });
 
   page.on("pageerror", (error) => {
-    reporter.recordConsoleError({
+    ref.current?.recordConsoleError({
       text: `Uncaught: ${error.message}`,
       url: page.url(),
       at: nowIso(),
@@ -23,7 +25,7 @@ export function attachErrorsWatcher(page: Page, reporter: ScenarioReporter): voi
   });
 
   page.on("crash", () => {
-    reporter.recordConsoleError({ text: "Page crashed.", url: page.url(), at: nowIso() });
+    ref.current?.recordConsoleError({ text: "Page crashed.", url: page.url(), at: nowIso() });
   });
 }
 

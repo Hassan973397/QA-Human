@@ -60,6 +60,7 @@ export interface RunOptions {
   updateSnapshots?: boolean;
   verbose?: boolean;
   ci?: boolean;
+  freshContexts?: boolean;
 }
 
 export async function runCommand(options: RunOptions): Promise<void> {
@@ -188,6 +189,7 @@ function applyOverrides(config: QaConfig, options: RunOptions): QaConfig {
       slowMo: options.slowMo ? Number(options.slowMo) : config.browser.slowMo,
       video: options.video === false ? "off" : config.browser.video,
       trace: options.trace === false ? "off" : config.browser.trace,
+      reuseContexts: options.freshContexts ? false : config.browser.reuseContexts,
     },
   };
 }

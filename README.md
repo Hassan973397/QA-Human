@@ -155,6 +155,13 @@ route, a logout control appeared, an auth token/session cookie is present, or th
 login form was removed). A visible error message ("invalid credentials" / "بيانات
 غير صحيحة") is detected and reported verbatim instead of a vague failure.
 
+By default each role is logged in **once per run** and its browser context is
+reused across every scenario — so you see one window per role and a single login,
+not a fresh window/login per scenario. Per-scenario traces are still captured (as
+tracing chunks); session videos are saved per role at the end. Pass
+`--fresh-contexts` (or `browser.reuseContexts: false`) to get the classic
+isolated-context-per-scenario behavior with independent per-scenario video.
+
 For non-standard apps, add an optional `auth` block to `qa.config.ts`:
 
 ```ts

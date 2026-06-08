@@ -52,6 +52,7 @@ program
   .option("--retries <n>", "retry failed scenarios N times (flaky detection)")
   .option("--report <format>", "json | md | html | junit | all", "all")
   .option("--ci", "CI mode: headless, write JUnit XML, emit GitHub annotations")
+  .option("--fresh-contexts", "use a new browser context per scenario (more windows, per-scenario video)")
   .option("--fail-fast", "stop after the first failing scenario")
   .option("--no-video", "disable video recording")
   .option("--no-trace", "disable tracing")
