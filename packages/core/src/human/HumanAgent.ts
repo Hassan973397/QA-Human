@@ -244,6 +244,56 @@ export class HumanAgent {
     return locator !== null;
   }
 
+  /** Fills the field only if present; returns whether it filled. Records a step. */
+  async fillIfExists(selector: SelectorInput, value: string): Promise<boolean> {
+    return this.act(`fill if exists ${selector}`, async () => {
+      const locator = await this.deps.resolver.tryResolve(this.deps.page, selector, 2500);
+      if (!locator) {
+        this.deps.reporter.setStepDetail("field not present — skipped");
+        return false;
+      }
+      await humanFill(locator, value, this.timeout);
+      return true;
+    });
+  }
+
+  /**
+   * يغلق طبقات الموافقة/الكوكيز الشائعة التي قد تحجب نموذج الدخول — بأفضل جهد
+   * وبلا فشل لو لم توجد. يبحث بالنصّ عربياً وإنجليزياً.
+   */
+  async dismissOverlays(): Promise<void> {
+    try {
+      await this.deps.page.evaluate(() => {
+        const re = /^(accept|accept all|agree|i agree|got it|ok|allow|موافق|أوافق|قبول|اقبل|تم|حسناً)$/i;
+        const nodes = Array.from(document.querySelectorAll("button, [role=button], a"));
+        for (const el of nodes) {
+          const t = (el.textContent || "").trim();
+          if (t && re.test(t)) {
+            (el as HTMLElement).click();
+            break;
+          }
+        }
+      });
+      await waitForStablePage(this.deps.page, { timeoutMs: 2000 });
+    } catch {
+      // best-effort — never fail login because of overlay handling
+    }
+  }
+
+  /** يرسل نموذج الدخول: زر الإرسال إن وُجد، وإلا Enter في حقل كلمة المرور. */
+  async submitLogin(viaEnter = false): Promise<void> {
+    const btn = viaEnter ? null : await this.deps.resolver.tryResolve(this.deps.page, "loginButton", 2500);
+    await this.act(btn ? "submit login (button)" : "submit login (Enter)", async () => {
+      if (btn) {
+        await humanClick(btn, this.timeout);
+      } else {
+        const pw = await this.deps.resolver.tryResolve(this.deps.page, "passwordInput", 2500);
+        if (pw) await pw.press("Enter");
+      }
+      await waitForStablePage(this.deps.page, { timeoutMs: 8000 });
+    });
+  }
+
   /** Clicks the element only if present; returns whether it clicked. Records a step. */
   async clickIfExists(selector: SelectorInput): Promise<boolean> {
     return this.act(`click if exists ${selector}`, async () => {

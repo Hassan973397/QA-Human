@@ -86,11 +86,28 @@ export async function loadQaConfig(options: LoadConfigOptions = {}): Promise<Loa
   return { config: parsed.data, configFile, envFilesLoaded, root };
 }
 
-function extractDefault(mod: unknown): QaConfigInput {
-  if (mod && typeof mod === "object" && "default" in mod) {
-    return (mod as { default: QaConfigInput }).default;
+/** مفاتيح تدل على أن الكائن هو إعداد فعلي لا مجرّد غلاف `default`. */
+const CONFIG_KEYS = ["app", "roles", "routes", "scenarios", "selectors", "browser", "discovery", "auth"];
+
+function looksLikeConfig(value: unknown): boolean {
+  return !!value && typeof value === "object" && CONFIG_KEYS.some((k) => k in (value as object));
+}
+
+/**
+ * يستخرج الإعداد من ناتج الاستيراد. بعض مُحمّلات ESM/tsx تغلّف التصدير الافتراضي
+ * مرتين (`mod.default.default`)، فنفكّ الغلاف حتى نصل لكائن الإعداد الحقيقي.
+ */
+export function extractDefault(mod: unknown): QaConfigInput {
+  let current: unknown = mod;
+  for (let depth = 0; depth < 5; depth++) {
+    if (looksLikeConfig(current)) return current as QaConfigInput;
+    if (current && typeof current === "object" && "default" in current) {
+      current = (current as { default: unknown }).default;
+      continue;
+    }
+    break;
   }
-  return mod as QaConfigInput;
+  return current as QaConfigInput;
 }
 
 type Plain = Record<string, unknown>;

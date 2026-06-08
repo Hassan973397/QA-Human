@@ -1,7 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deepMerge } from "../src/config/loadQaConfig.js";
+import { deepMerge, extractDefault } from "../src/config/loadQaConfig.js";
 import { qaConfigSchema } from "../src/config/schema.js";
+
+test("extractDefault unwraps a single default export", () => {
+  const cfg = { app: { name: "X" }, roles: { admin: { email: "a@b.c" } } };
+  assert.deepEqual(extractDefault({ default: cfg }), cfg);
+});
+
+test("extractDefault unwraps a double-nested default (tsx/esm interop)", () => {
+  const cfg = { app: { name: "X" }, roles: { admin: { email: "a@b.c" } } };
+  // tsImport can wrap the default export twice: mod.default.default === config
+  assert.deepEqual(extractDefault({ default: { default: cfg } }), cfg);
+});
+
+test("extractDefault returns a bare config object as-is", () => {
+  const cfg = { routes: { login: "/login" } };
+  assert.deepEqual(extractDefault(cfg), cfg);
+});
 
 test("deepMerge merges nested objects and keeps untouched keys", () => {
   const out = deepMerge({ a: { x: 1, y: 2 }, b: 5 }, { a: { y: 3 }, c: 9 });

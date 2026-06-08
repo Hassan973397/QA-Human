@@ -144,6 +144,29 @@ and groups review findings by layer with a fix suggestion each.
 Each scenario degrades gracefully: if the required role, route, or feature is missing it
 is **skipped/blocked** with a reason instead of producing a false failure.
 
+## Logging in (authentication)
+
+Give each role credentials in `.env.qa` (`QA_<ROLE>_EMAIL` / `QA_<ROLE>_PASSWORD`)
+and the tool logs that role into its own isolated browser context, saving the
+session to `qa/.auth/<role>.json` so later runs skip the login. The login flow is
+robust: it fills email **or** username, dismisses cookie/consent overlays, submits
+by button or Enter, and confirms success by **multiple signals** (left the login
+route, a logout control appeared, an auth token/session cookie is present, or the
+login form was removed). A visible error message ("invalid credentials" / "بيانات
+غير صحيحة") is detected and reported verbatim instead of a vague failure.
+
+For non-standard apps, add an optional `auth` block to `qa.config.ts`:
+
+```ts
+auth: {
+  successUrl: "/dashboard",          // URL fragment that means "logged in"
+  successSelector: '[data-testid=user-menu]',
+  errorSelector: '.login-error',
+  submitViaEnter: false,             // submit with Enter instead of a button
+  retries: 1,                        // retry a transient login once
+}
+```
+
 ## How it tests "from A to Z"
 
 1. **Study** — read files, infer routes/forms/roles/APIs/workflows → knowledge graph.

@@ -105,6 +105,23 @@ export const a11yConfigSchema = z.object({
   failOn: z.enum(["none", "minor", "moderate", "serious", "critical"]).default("serious"),
 });
 
+/**
+ * تلميحات تسجيل الدخول الاختيارية — كلها اختيارية؛ بدونها يعتمد المحرّك على كشف
+ * نجاح تلقائي متعدّد الإشارات. صرّح بها عندما يكون تطبيقك غير قياسي.
+ */
+export const authConfigSchema = z.object({
+  /** مسار/جزء رابط يدل على نجاح الدخول (مثل /dashboard). */
+  successUrl: z.string().optional(),
+  /** محدّد يظهر فقط بعد الدخول (قائمة المستخدم/زر الخروج). */
+  successSelector: z.string().optional(),
+  /** محدّد رسالة خطأ الدخول. */
+  errorSelector: z.string().optional(),
+  /** إرسال النموذج بمفتاح Enter بدل زر الإرسال. */
+  submitViaEnter: z.boolean().default(false),
+  /** عدد محاولات إعادة الدخول عند فشل عابر. */
+  retries: z.number().int().min(0).max(3).default(1),
+});
+
 export const qaConfigSchema = z.object({
   app: z
     .object({
@@ -129,6 +146,7 @@ export const qaConfigSchema = z.object({
   performanceBudgetMs: z.number().int().min(0).default(0),
   visual: visualConfigSchema.default({}),
   a11y: a11yConfigSchema.default({}),
+  auth: authConfigSchema.default({}),
   safety: safetyConfigSchema.default({}),
 });
 
@@ -139,6 +157,7 @@ export type DiscoveryConfig = z.infer<typeof discoveryConfigSchema>;
 export type SafetyConfig = z.infer<typeof safetyConfigSchema>;
 export type VisualConfig = z.infer<typeof visualConfigSchema>;
 export type A11yConfig = z.infer<typeof a11yConfigSchema>;
+export type AuthConfig = z.infer<typeof authConfigSchema>;
 export type QaConfig = z.infer<typeof qaConfigSchema>;
 
 /** The shape users pass to defineQaConfig (everything optional / pre-validation). */
