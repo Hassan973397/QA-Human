@@ -4,6 +4,7 @@ import type { ScenarioReporter } from "../reporting/QaReporter.js";
 import type { HumanAgent } from "../human/HumanAgent.js";
 import { ScenarioSkip } from "../errors/ScenarioError.js";
 import { joinUrl } from "../utils/path.js";
+import { SafetyGuard } from "../safety/SafetyGuard.js";
 import type { ApiClient, ApiResponse, Humans, ScenarioContext } from "./types.js";
 
 /** Map-backed Humans accessor with typed convenience methods per known role. */
@@ -82,6 +83,7 @@ export interface BuildContextInput {
 export function buildScenarioContext(input: BuildContextInput): ScenarioContext {
   const humans = new HumansImpl(input.humansMap);
   const api = new HttpApiClient(input.config.app.baseUrl);
+  const safety = new SafetyGuard(input.config.safety);
 
   const skip = (reason: string): never => {
     throw new ScenarioSkip(reason);
@@ -94,6 +96,8 @@ export function buildScenarioContext(input: BuildContextInput): ScenarioContext 
     config: input.config,
     sharedMemory: input.sharedMemory,
     api,
+    safety,
+    testData: (label: string) => safety.testData(label),
     skip,
     requireRole(role: string) {
       if (!humans.has(role)) skip(`Required role "${role}" is not available (missing credentials?).`);

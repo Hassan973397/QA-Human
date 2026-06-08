@@ -21,6 +21,8 @@ export const roleConfigSchema = z.object({
 export const browserConfigSchema = z.object({
   headless: z.boolean().default(true),
   slowMo: z.number().min(0).default(0),
+  /** Which Playwright browser engine to drive. */
+  engine: z.enum(["chromium", "firefox", "webkit"]).default("chromium"),
   trace: z
     .enum(["on", "off", "retain-on-failure", "on-first-retry"])
     .default("retain-on-failure"),
@@ -87,6 +89,10 @@ export const qaConfigSchema = z.object({
   routes: z.record(z.string(), z.string()).default({}),
   selectors: z.record(z.string(), z.array(z.string())).default({}),
   scenarios: z.array(z.string()).default([]),
+  /** Extra directory (relative to project root) to load *.scenario.ts from. */
+  scenariosDir: z.string().optional(),
+  /** Default number of parallel workers for `hqa run`. */
+  workers: z.number().int().min(1).max(16).default(1),
   safety: safetyConfigSchema.default({}),
 });
 

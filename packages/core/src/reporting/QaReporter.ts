@@ -105,6 +105,59 @@ export class ScenarioReporter {
   }
 }
 
+/**
+ * Merges several QaReports (one per parallel worker) into a single report.
+ * Scenario order follows the input order of `reports`. Summary is recomputed.
+ */
+export function mergeReports(reports: QaReport[]): QaReport {
+  if (reports.length === 0) {
+    throw new Error("mergeReports requires at least one report.");
+  }
+  const base = reports[0]!;
+  const scenarios = reports.flatMap((r) => r.scenarios);
+  const securityFindings = reports.flatMap((r) => r.securityFindings);
+  const requiredConfig = dedupeBy(
+    reports.flatMap((r) => r.requiredConfig),
+    (i) => i.message,
+  );
+  const unknowns = Array.from(new Set(reports.flatMap((r) => r.unknowns)));
+  const startedAt = reports.map((r) => r.startedAt).sort()[0]!;
+  const finishedAt = reports.map((r) => r.finishedAt).sort().reverse()[0]!;
+
+  return {
+    appName: base.appName,
+    baseUrl: base.baseUrl,
+    environment: base.environment,
+    startedAt,
+    finishedAt,
+    durationMs: new Date(finishedAt).getTime() - new Date(startedAt).getTime(),
+    discovery: base.discovery,
+    summary: {
+      total: scenarios.length,
+      passed: scenarios.filter((s) => s.status === "passed").length,
+      failed: scenarios.filter((s) => s.status === "failed").length,
+      skipped: scenarios.filter((s) => s.status === "skipped").length,
+      blocked: scenarios.filter((s) => s.status === "blocked").length,
+    },
+    scenarios,
+    securityFindings,
+    unknowns,
+    requiredConfig,
+  };
+}
+
+function dedupeBy<T>(arr: T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const item of arr) {
+    const k = key(item);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(item);
+  }
+  return out;
+}
+
 /** Aggregates all scenario results into the final QaReport. */
 export class QaReporter {
   private readonly scenarios: ScenarioResult[] = [];
