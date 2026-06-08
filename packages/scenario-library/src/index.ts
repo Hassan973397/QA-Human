@@ -15,6 +15,7 @@ import apiBasicHealth from "./api/basicHealth.js";
 import exploreCrawl from "./explore/crawl.js";
 import visualPages from "./quality/visualPages.js";
 import a11yAudit from "./quality/a11yAudit.js";
+import productOwnerReview from "./review/productOwner.js";
 
 export {
   authLogin,
@@ -23,6 +24,7 @@ export {
   exploreCrawl,
   visualPages,
   a11yAudit,
+  productOwnerReview,
   customerCreateOrder,
   merchantManageOrder,
   merchantBlockCustomer,
@@ -51,6 +53,7 @@ export const builtinScenarios: ScenarioDefinition[] = [
   exploreCrawl,
   visualPages,
   a11yAudit,
+  productOwnerReview,
 ];
 
 /** Look up built-in scenarios by id, with substring fallback. */

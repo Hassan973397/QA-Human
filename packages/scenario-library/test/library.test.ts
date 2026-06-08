@@ -38,6 +38,7 @@ test("the expected flagship scenarios are present", () => {
     "visual.pages",
     "a11y.audit",
     "explore.crawl",
+    "review.productOwner",
   ]) {
     assert.ok(ids.has(id), `missing ${id}`);
   }

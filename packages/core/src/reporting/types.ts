@@ -58,6 +58,27 @@ export interface A11yViolation {
   nodeCount: number;
 }
 
+/**
+ * ملاحظة «صاحب المشروع» — تدقيق منتج/تجربة استخدام لكل صفحة:
+ * عنصر ناقص (زر/عنوان)، تبويب بمكان خطأ، حقل بلا تسمية، تنقّل مزدحم… إلخ.
+ * استشارية بطبيعتها (low/medium) ولا تُفشِل التشغيل — هدفها التحسين لا الإنذار.
+ */
+export interface UxFinding {
+  /** الصفحة التي رُصدت فيها الملاحظة (مسار أو رابط). */
+  scope: string;
+  /** تصنيف ثابت يُمكّن التجميع، مثل form-maybe-no-submit. */
+  category: string;
+  severity: Severity;
+  /** عنوان قصير بالإنجليزية. */
+  title: string;
+  /** ما الذي رُصد فعلاً على الصفحة. */
+  detail: string;
+  /** اقتراح إصلاح بأسلوب صاحب المنتج. */
+  suggestion: string;
+  /** تلميح لتحديد العنصر في DOM إن وُجد. */
+  selector?: string;
+}
+
 export interface ScenarioResult {
   id: string;
   title: string;
@@ -75,6 +96,8 @@ export interface ScenarioResult {
   metrics: PageMetric[];
   visualChecks: VisualCheck[];
   a11yViolations: A11yViolation[];
+  /** ملاحظات تدقيق المنتج/التجربة لهذه الصفحات. */
+  uxFindings: UxFinding[];
   consoleErrors: ConsoleErrorEntry[];
   networkErrors: NetworkErrorEntry[];
   failureReason?: string;

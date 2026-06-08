@@ -6,7 +6,8 @@ import { ScenarioError } from "../errors/ScenarioError.js";
 import { ensureDir, fs } from "../utils/file.js";
 import { compareScreenshots } from "../quality/visualCompare.js";
 import { runAxeAudit, impactAtLeast } from "../quality/a11yAudit.js";
-import type { ArtifactRef, A11yViolation } from "../reporting/types.js";
+import { auditPageHeuristics } from "../quality/uxHeuristics.js";
+import type { ArtifactRef, A11yViolation, UxFinding } from "../reporting/types.js";
 import { humanClick, humanFill, humanType } from "./HumanAction.js";
 import {
   checkNoBlankScreen,
@@ -383,6 +384,26 @@ export class HumanAgent {
           `Accessibility: ${failing.length} ${a11y.failOn}+ violation(s), e.g. "${top.id}" (${top.impact}) — ${top.help}.`,
         );
       }
+    });
+  }
+
+  // ---- product / UX review ---------------------------------------------
+
+  /**
+   * يراجع الصفحة الحالية كصاحب المشروع: يرصد العناصر الناقصة (زر/عنوان)،
+   * التبويبات بمكان خطأ، الحقول بلا تسمية، التنقّل المزدحم، الروابط المعطّلة…
+   * يسجّل الملاحظات كاستشارية (لا تُفشِل التشغيل) ليقرأها صاحب المشروع ويحسّن.
+   */
+  async reviewPage(scopeLabel?: string): Promise<void> {
+    await this.act(`product review${scopeLabel ? ` (${scopeLabel})` : ""}`, async () => {
+      const scope = scopeLabel ?? this.deps.page.url();
+      const raw = await auditPageHeuristics(this.deps.page);
+      const findings: UxFinding[] = raw.map((r) => ({ scope, ...r }));
+      this.deps.reporter.recordUxFindings(findings);
+      const med = findings.filter((f) => f.severity === "medium").length;
+      this.deps.reporter.setStepDetail(
+        `${findings.length} UX finding(s)${med ? `, ${med} worth fixing` : ""}`,
+      );
     });
   }
 

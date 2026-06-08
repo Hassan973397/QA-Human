@@ -88,6 +88,7 @@ export function renderHtmlReport(report: QaReport): string {
     ${report.scenarios.map(scenarioBlock).join("\n")}
   </div>
 
+  ${productReviewBlock(report)}
   ${securityBlock(report)}
   ${listBlock("Unknowns", report.unknowns)}
   ${listBlock("Required Configuration", report.requiredConfig.map((r) => `${r.kind}: ${r.message}`))}
@@ -202,6 +203,12 @@ function scenarioBlock(sc: ScenarioResult): string {
       .join(", ");
     meta.push(`<div class="muted">A11y: ${sc.a11yViolations.length} violation(s) — ${top}</div>`);
   }
+  if (sc.uxFindings.length) {
+    const med = sc.uxFindings.filter((f) => f.severity === "medium").length;
+    meta.push(
+      `<div class="muted">Product review: ${sc.uxFindings.length} finding(s)${med ? ` · ${med} worth fixing` : ""}</div>`,
+    );
+  }
   if (sc.failureReason) meta.push(`<div class="err">Failure: ${esc(sc.failureReason)}</div>`);
   if (sc.skipReason) meta.push(`<div class="muted">Skip: ${esc(sc.skipReason)}</div>`);
   if (sc.suspectedRootCause) meta.push(`<div class="muted">Root cause: ${esc(sc.suspectedRootCause)}</div>`);
@@ -218,6 +225,39 @@ function scenarioBlock(sc: ScenarioResult): string {
     <details><summary>${sc.steps.length} steps</summary>${steps}</details>
     ${artifacts ? `<div class="muted">Artifacts: ${artifacts}</div>` : ""}
   </div>`;
+}
+
+/** قسم «مراجعة المنتج» — ملاحظات صاحب المشروع مجمّعة حسب الصفحة. */
+function productReviewBlock(report: QaReport): string {
+  const findings = report.scenarios
+    .flatMap((s) => s.uxFindings)
+    .filter((f) => !f.category.endsWith("-more"));
+  if (findings.length === 0) return "";
+  const byScope = new Map<string, typeof findings>();
+  for (const f of findings) {
+    const list = byScope.get(f.scope) ?? [];
+    list.push(f);
+    byScope.set(f.scope, list);
+  }
+  const med = findings.filter((f) => f.severity === "medium").length;
+  const sevDot = (s: string): string =>
+    `<span style="color:${s === "medium" ? "#f59e0b" : "#eab308"}">●</span>`;
+  const blocks = Array.from(byScope.entries())
+    .map(([scope, list]) => {
+      const items = list
+        .sort((a, b) => (b.severity === "medium" ? 1 : 0) - (a.severity === "medium" ? 1 : 0))
+        .map(
+          (f) =>
+            `<li>${sevDot(f.severity)} <strong>${esc(f.title)}</strong> — ${esc(f.detail)}<br>
+             <span class="muted">💡 ${esc(f.suggestion)}${f.selector ? ` <code>${esc(f.selector)}</code>` : ""}</span></li>`,
+        )
+        .join("");
+      return `<div class="scenario"><strong><code>${esc(scope)}</code></strong><ul>${items}</ul></div>`;
+    })
+    .join("");
+  return `<h2>🧐 Product Review <span class="muted" style="font-size:14px">— owner's eye</span></h2>
+    <div class="muted">${findings.length} observation(s) across ${byScope.size} page(s)${med ? ` · ${med} worth fixing` : ""}.</div>
+    ${blocks}`;
 }
 
 function securityBlock(report: QaReport): string {

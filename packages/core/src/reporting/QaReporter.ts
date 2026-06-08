@@ -16,6 +16,7 @@ import type {
   PageMetric,
   VisualCheck,
   A11yViolation,
+  UxFinding,
 } from "./types.js";
 
 export interface ScenarioMeta {
@@ -52,6 +53,7 @@ export class ScenarioReporter {
       metrics: [],
       visualChecks: [],
       a11yViolations: [],
+      uxFindings: [],
       consoleErrors: [],
       networkErrors: [],
     };
@@ -99,6 +101,11 @@ export class ScenarioReporter {
 
   recordA11yViolations(violations: A11yViolation[]): void {
     this.result.a11yViolations.push(...violations);
+  }
+
+  /** يسجّل ملاحظات تدقيق المنتج/التجربة لصفحة تمّت مراجعتها. */
+  recordUxFindings(findings: UxFinding[]): void {
+    this.result.uxFindings.push(...findings);
   }
 
   recordConsoleError(entry: ConsoleErrorEntry): void {

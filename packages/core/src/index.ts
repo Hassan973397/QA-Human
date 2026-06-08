@@ -79,6 +79,7 @@ export {
   type A11yViolationResult,
   type ImpactLevel,
 } from "./quality/a11yAudit.js";
+export { auditPageHeuristics, type RawUxFinding } from "./quality/uxHeuristics.js";
 
 // Safety
 export { SafetyGuard, type SafetyDecision } from "./safety/SafetyGuard.js";

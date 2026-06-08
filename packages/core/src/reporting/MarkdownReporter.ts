@@ -37,6 +37,8 @@ export function renderMarkdownReport(report: QaReport): string {
   l.push("## Scenarios");
   for (const sc of report.scenarios) l.push(...renderScenario(sc));
 
+  l.push(...renderProductReview(report));
+
   if (report.securityFindings.length > 0) {
     l.push("");
     l.push("## 🔐 Security Findings");
@@ -71,6 +73,37 @@ function renderPerformance(report: QaReport): string[] {
     l.push(`- ${m.loadMs}ms (ttfb ${m.ttfbMs}ms) — \`${m.url}\` [${m.role}]${m.overBudget ? " ⚠" : ""}`);
   }
   return l;
+}
+
+/** قسم مجمّع لملاحظات صاحب المشروع، مرتّب حسب الصفحة ثم الخطورة. */
+function renderProductReview(report: QaReport): string[] {
+  const findings = report.scenarios.flatMap((s) => s.uxFindings).filter((f) => !f.category.endsWith("-more"));
+  if (findings.length === 0) return [];
+  const byScope = new Map<string, typeof findings>();
+  for (const f of findings) {
+    const list = byScope.get(f.scope) ?? [];
+    list.push(f);
+    byScope.set(f.scope, list);
+  }
+  const med = findings.filter((f) => f.severity === "medium").length;
+  const l: string[] = ["", "## 🧐 Product Review (owner's eye)"];
+  l.push(`${findings.length} observation(s) across ${byScope.size} page(s)${med ? ` — ${med} worth fixing` : ""}.`);
+  for (const [scope, list] of byScope) {
+    l.push("");
+    l.push(`### \`${scope}\``);
+    for (const f of list.sort((a, b) => weight(b.severity) - weight(a.severity))) {
+      l.push(`- ${sev(f.severity)} **${f.title}** — ${f.detail}`);
+      l.push(`  - 💡 ${f.suggestion}${f.selector ? ` (\`${f.selector}\`)` : ""}`);
+    }
+  }
+  return l;
+}
+
+function sev(s: string): string {
+  return s === "medium" ? "🟠" : "🟡";
+}
+function weight(s: string): number {
+  return s === "medium" ? 2 : 1;
 }
 
 function renderScenario(sc: ScenarioResult): string[] {
@@ -112,6 +145,10 @@ function renderScenario(sc: ScenarioResult): string[] {
     for (const v of sc.a11yViolations.slice(0, 5)) {
       l.push(`  - [${v.impact}] ${v.id} — ${v.help} (${v.scope})`);
     }
+  }
+  if (sc.uxFindings.length) {
+    const med = sc.uxFindings.filter((f) => f.severity === "medium").length;
+    l.push(`- Product review: ${sc.uxFindings.length} finding(s)${med ? `, ${med} worth fixing` : ""}`);
   }
   if (sc.consoleErrors.length) {
     l.push(`- Console errors: ${sc.consoleErrors.length}`);
