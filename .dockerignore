@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+.git
+.github
+**/qa/.hqa
+**/qa/.auth
+**/qa/reports
+**/qa/.visual
+examples/**/qa
+playwright-report
+test-results
+*.log
+.env
+.env.*
+!.env.*.example

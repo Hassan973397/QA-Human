@@ -22,5 +22,28 @@
   },
   "dependencies": {
     "@hasan-qa-humans/core": "workspace:*"
+  },
+  "author": "Hasan QA Humans contributors",
+  "keywords": [
+    "qa",
+    "testing",
+    "playwright",
+    "e2e",
+    "automation",
+    "accessibility",
+    "visual-regression",
+    "scenarios"
+  ],
+  "homepage": "https://github.com/Hassan973397/QA-Human#readme",
+  "bugs": {
+    "url": "https://github.com/Hassan973397/QA-Human/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hassan973397/QA-Human.git",
+    "directory": "packages/scenario-library"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

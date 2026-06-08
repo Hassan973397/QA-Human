@@ -34,12 +34,27 @@ pnpm build
 npx playwright install chromium    # one-time browser download
 ```
 
-To use it in another project, install the published packages (or link this repo) and the
-`hqa` binary becomes available:
+To use it in another project, install the CLI from npm — the `hqa` binary becomes available:
 
 ```bash
+npm i -g @hasan-qa-humans/cli      # or: pnpm add -D @hasan-qa-humans/cli
 hqa --help
 ```
+
+### Run with Docker (no local browsers needed)
+
+The image is based on the official Playwright image, so all browsers are preinstalled.
+
+```bash
+docker build -t hqa .
+
+# Run any command against your mounted project:
+docker run --rm -v "$PWD":/work -w /work hqa discover
+docker run --rm --network host -v "$PWD":/work -w /work hqa run --base-url http://localhost:3000
+```
+
+The entrypoint symlinks the bundled tool into your project so `qa.config.ts` resolves
+`@hasan-qa-humans/*` without a local install.
 
 ## The 6 commands
 
@@ -219,6 +234,15 @@ pnpm clean       # remove build outputs
 ```
 
 CI runs install → build → typecheck → lint → test on every push and pull request.
+
+### Releasing
+
+The packages publish to npm automatically when a version tag is pushed (requires an
+`NPM_TOKEN` repo secret):
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0   # triggers .github/workflows/release.yml
+```
 
 ## Safety
 

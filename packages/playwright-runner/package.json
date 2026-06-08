@@ -12,7 +12,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean"
@@ -20,5 +22,29 @@
   "dependencies": {
     "@hasan-qa-humans/core": "workspace:*",
     "playwright": "^1.49.0"
+  },
+  "author": "Hasan QA Humans contributors",
+  "keywords": [
+    "qa",
+    "testing",
+    "playwright",
+    "e2e",
+    "automation",
+    "accessibility",
+    "visual-regression",
+    "browser",
+    "multi-role"
+  ],
+  "homepage": "https://github.com/Hassan973397/QA-Human#readme",
+  "bugs": {
+    "url": "https://github.com/Hassan973397/QA-Human/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hassan973397/QA-Human.git",
+    "directory": "packages/playwright-runner"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

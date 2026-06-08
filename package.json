@@ -27,5 +27,23 @@
     "@eslint/js": "^9.17.0",
     "typescript-eslint": "^8.18.0",
     "globals": "^15.14.0"
+  },
+  "author": "Hasan QA Humans contributors",
+  "keywords": [
+    "qa",
+    "testing",
+    "playwright",
+    "e2e",
+    "automation",
+    "accessibility",
+    "visual-regression"
+  ],
+  "homepage": "https://github.com/Hassan973397/QA-Human#readme",
+  "bugs": {
+    "url": "https://github.com/Hassan973397/QA-Human/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hassan973397/QA-Human.git"
   }
 }
