@@ -41,6 +41,23 @@ export interface PageMetric {
   overBudget: boolean;
 }
 
+export interface VisualCheck {
+  name: string;
+  status: "match" | "diff" | "new";
+  diffRatio: number;
+  baselinePath?: string;
+  diffPath?: string;
+}
+
+export interface A11yViolation {
+  scope: string;
+  id: string;
+  impact: string;
+  help: string;
+  helpUrl: string;
+  nodeCount: number;
+}
+
 export interface ScenarioResult {
   id: string;
   title: string;
@@ -56,6 +73,8 @@ export interface ScenarioResult {
   steps: StepResult[];
   artifacts: ArtifactRef[];
   metrics: PageMetric[];
+  visualChecks: VisualCheck[];
+  a11yViolations: A11yViolation[];
   consoleErrors: ConsoleErrorEntry[];
   networkErrors: NetworkErrorEntry[];
   failureReason?: string;

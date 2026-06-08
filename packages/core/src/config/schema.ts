@@ -77,6 +77,22 @@ export const safetyConfigSchema = z.object({
     .default(["localhost", "127.0.0.1", "0.0.0.0", "staging", "test", "dev", "qa"]),
 });
 
+export const visualConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  /** Max fraction of differing pixels before a visual check fails (0..1). */
+  maxDiffRatio: z.number().min(0).max(1).default(0.02),
+  /** Per-pixel color sensitivity passed to pixelmatch (0..1, lower = stricter). */
+  threshold: z.number().min(0).max(1).default(0.1),
+  /** When true, (re)writes baselines instead of comparing. */
+  updateBaselines: z.boolean().default(false),
+});
+
+export const a11yConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  /** Minimum impact level that should fail a scenario. */
+  failOn: z.enum(["none", "minor", "moderate", "serious", "critical"]).default("serious"),
+});
+
 export const qaConfigSchema = z.object({
   app: z.object({
     name: z.string().default("My App"),
@@ -97,6 +113,8 @@ export const qaConfigSchema = z.object({
   retries: z.number().int().min(0).max(5).default(0),
   /** Page-load budget in ms; navigations slower than this are flagged. 0 = off. */
   performanceBudgetMs: z.number().int().min(0).default(0),
+  visual: visualConfigSchema.default({}),
+  a11y: a11yConfigSchema.default({}),
   safety: safetyConfigSchema.default({}),
 });
 
@@ -105,6 +123,8 @@ export type RoleConfig = z.infer<typeof roleConfigSchema>;
 export type BrowserConfig = z.infer<typeof browserConfigSchema>;
 export type DiscoveryConfig = z.infer<typeof discoveryConfigSchema>;
 export type SafetyConfig = z.infer<typeof safetyConfigSchema>;
+export type VisualConfig = z.infer<typeof visualConfigSchema>;
+export type A11yConfig = z.infer<typeof a11yConfigSchema>;
 export type QaConfig = z.infer<typeof qaConfigSchema>;
 
 /** The shape users pass to defineQaConfig (everything optional / pre-validation). */

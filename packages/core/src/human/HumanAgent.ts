@@ -1,8 +1,12 @@
 import type { Locator } from "playwright";
+import path from "node:path";
 import { joinUrl } from "../utils/path.js";
 import { logger } from "../utils/logger.js";
 import { ScenarioError } from "../errors/ScenarioError.js";
-import type { ArtifactRef } from "../reporting/types.js";
+import { ensureDir, fs } from "../utils/file.js";
+import { compareScreenshots } from "../quality/visualCompare.js";
+import { runAxeAudit, impactAtLeast } from "../quality/a11yAudit.js";
+import type { ArtifactRef, A11yViolation } from "../reporting/types.js";
 import { humanClick, humanFill, humanType } from "./HumanAction.js";
 import {
   checkNoBlankScreen,
@@ -286,6 +290,100 @@ export class HumanAgent {
 
   apiPost(path: string, data?: unknown, headers?: Record<string, string>) {
     return this.apiRequest("POST", path, { data, headers });
+  }
+
+  // ---- visual regression -----------------------------------------------
+
+  /**
+   * Compares a full-page screenshot against a stored baseline. First run (or
+   * when visual.updateBaselines is set) records the baseline and passes. Later
+   * runs fail if the diff ratio exceeds visual.maxDiffRatio, attaching a diff
+   * image so the change is visible in the report.
+   */
+  async expectVisualMatch(name: string, opts: { fullPage?: boolean } = {}): Promise<void> {
+    const visual = this.deps.config.visual;
+    if (!visual.enabled) return;
+    await this.act(`visual check "${name}"`, async () => {
+      const slug = this.slug(name);
+      const current = await this.deps.page.screenshot({ fullPage: opts.fullPage ?? true });
+      const baselinePath = path.join(this.deps.artifacts.baselineDir, `${slug}.png`);
+
+      if (visual.updateBaselines || !(await fs.pathExists(baselinePath))) {
+        await ensureDir(this.deps.artifacts.baselineDir);
+        await fs.writeFile(baselinePath, current);
+        this.deps.reporter.recordVisualCheck({ name, status: "new", diffRatio: 0, baselinePath });
+        this.deps.reporter.setStepDetail("baseline recorded");
+        return;
+      }
+
+      const baseline = await fs.readFile(baselinePath);
+      const result = compareScreenshots(current, baseline, visual.threshold);
+      const overThreshold = result.diffRatio > visual.maxDiffRatio;
+
+      let diffRel: string | undefined;
+      if (overThreshold && result.diffPng) {
+        const diffAbs = path.join(
+          this.deps.artifacts.screenshotsDir,
+          `${this.slug(this.deps.reporter.result.id)}-visual-${slug}-diff.png`,
+        );
+        await fs.writeFile(diffAbs, result.diffPng);
+        diffRel = this.deps.artifacts.relativize(diffAbs);
+        this.deps.reporter.addScreenshot({ type: "screenshot", path: diffRel, label: `${name} diff` });
+      }
+
+      this.deps.reporter.recordVisualCheck({
+        name,
+        status: overThreshold ? "diff" : "match",
+        diffRatio: result.diffRatio,
+        diffPath: diffRel,
+      });
+      this.deps.reporter.setStepDetail(`diff ${(result.diffRatio * 100).toFixed(2)}%`);
+
+      if (overThreshold) {
+        throw new ScenarioError(
+          `Visual regression on "${name}": ${(result.diffRatio * 100).toFixed(2)}% of pixels changed (budget ${(visual.maxDiffRatio * 100).toFixed(2)}%)${result.sizeMismatch ? " — page size changed" : ""}.`,
+        );
+      }
+    });
+  }
+
+  // ---- accessibility ----------------------------------------------------
+
+  /**
+   * Runs an axe-core accessibility audit on the current page. Records all
+   * violations; fails the scenario if any meet/exceed the configured impact
+   * threshold (a11y.failOn).
+   */
+  async auditAccessibility(scopeLabel?: string): Promise<void> {
+    const a11y = this.deps.config.a11y;
+    if (!a11y.enabled) return;
+    await this.act(`a11y audit${scopeLabel ? ` (${scopeLabel})` : ""}`, async () => {
+      const scope = scopeLabel ?? this.deps.page.url();
+      const violations = await runAxeAudit(this.deps.page);
+      const mapped: A11yViolation[] = violations.map((v) => ({
+        scope,
+        id: v.id,
+        impact: v.impact,
+        help: v.help,
+        helpUrl: v.helpUrl,
+        nodeCount: v.nodes.length,
+      }));
+      this.deps.reporter.recordA11yViolations(mapped);
+
+      const failing =
+        a11y.failOn === "none"
+          ? []
+          : mapped.filter((v) => impactAtLeast(v.impact, a11y.failOn));
+      this.deps.reporter.setStepDetail(
+        `${mapped.length} violation(s), ${failing.length} at/above ${a11y.failOn}`,
+      );
+      if (failing.length > 0) {
+        const top = failing[0]!;
+        throw new ScenarioError(
+          `Accessibility: ${failing.length} ${a11y.failOn}+ violation(s), e.g. "${top.id}" (${top.impact}) — ${top.help}.`,
+        );
+      }
+    });
   }
 
   // ---- memory + artifacts ----------------------------------------------

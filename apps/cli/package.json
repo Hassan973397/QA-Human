@@ -9,7 +9,9 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean"
@@ -23,6 +25,7 @@
     "ora": "^8.1.1",
     "picocolors": "^1.1.1",
     "playwright": "^1.49.0",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "@anthropic-ai/sdk": "^0.69.0"
   }
 }

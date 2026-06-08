@@ -9,6 +9,8 @@ import type { HumanMemory } from "./HumanMemory.js";
 export interface ArtifactSink {
   /** Absolute directory where screenshots should be written. */
   screenshotsDir: string;
+  /** Absolute directory where visual baselines are stored (persists between runs). */
+  baselineDir: string;
   /** Convert an absolute artifact path into a path relative to the report root. */
   relativize(absPath: string): string;
 }

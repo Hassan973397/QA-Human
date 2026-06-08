@@ -45,8 +45,19 @@ qa/reports/latest/
 | unexpected redirect | medium | auth/navigation |
 | selector not found | medium | UI selector / not ready |
 
-The same logic is exposed via the `AiAnalyzer` interface (`RuleBasedAiAnalyzer`), which is
-designed so an LLM-backed analyzer can replace it later without changing the runner.
+The same logic is exposed via the `AiAnalyzer` interface (`RuleBasedAiAnalyzer`). When
+`ANTHROPIC_API_KEY` is set, `LlmAiAnalyzer` enriches failed scenarios with Claude
+(`claude-opus-4-8`, override via `HQA_LLM_MODEL`) for root cause + fix; with no key it falls
+back to the rule-based analyzer, so runs stay fully offline by default.
+
+## Visual & accessibility findings
+
+- **Visual regression** (`visual.pages` / `expectVisualMatch`): each scenario records
+  `visualChecks` (status `new` / `match` / `diff` + diff ratio). Regressions attach a diff PNG.
+  Baselines live in `qa/.visual/baselines/`; refresh with `hqa run --update-snapshots`.
+- **Accessibility** (`a11y.audit` / `auditAccessibility`): each scenario records
+  `a11yViolations` (axe rule id, impact, help URL, scope). Scenarios fail on violations at or
+  above `a11y.failOn` (default `serious`).
 
 ## History & comparison
 

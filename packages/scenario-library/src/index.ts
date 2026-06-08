@@ -13,12 +13,16 @@ import tenantIsolation from "./security/tenantIsolation.js";
 import unauthenticatedAccess from "./security/unauthenticatedAccess.js";
 import apiBasicHealth from "./api/basicHealth.js";
 import exploreCrawl from "./explore/crawl.js";
+import visualPages from "./quality/visualPages.js";
+import a11yAudit from "./quality/a11yAudit.js";
 
 export {
   authLogin,
   pageSmoke,
   blankScreenCheck,
   exploreCrawl,
+  visualPages,
+  a11yAudit,
   customerCreateOrder,
   merchantManageOrder,
   merchantBlockCustomer,
@@ -45,6 +49,8 @@ export const builtinScenarios: ScenarioDefinition[] = [
   tenantIsolation,
   apiBasicHealth,
   exploreCrawl,
+  visualPages,
+  a11yAudit,
 ];
 
 /** Look up built-in scenarios by id, with substring fallback. */

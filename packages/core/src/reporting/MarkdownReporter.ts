@@ -100,6 +100,19 @@ function renderScenario(sc: ScenarioResult): string[] {
     }
   }
 
+  if (sc.visualChecks.length) {
+    const diffs = sc.visualChecks.filter((v) => v.status === "diff");
+    l.push(
+      `- Visual: ${sc.visualChecks.length} check(s)${diffs.length ? `, ${diffs.length} regression(s)` : ""}`,
+    );
+    for (const v of diffs) l.push(`  - ⚠ ${v.name}: ${(v.diffRatio * 100).toFixed(2)}% changed`);
+  }
+  if (sc.a11yViolations.length) {
+    l.push(`- Accessibility: ${sc.a11yViolations.length} violation(s)`);
+    for (const v of sc.a11yViolations.slice(0, 5)) {
+      l.push(`  - [${v.impact}] ${v.id} — ${v.help} (${v.scope})`);
+    }
+  }
   if (sc.consoleErrors.length) {
     l.push(`- Console errors: ${sc.consoleErrors.length}`);
     for (const e of sc.consoleErrors.slice(0, 5)) l.push(`  - ${e.text}`);

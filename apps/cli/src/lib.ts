@@ -37,6 +37,11 @@ export function getScenariosDir(root: string): string {
   return path.join(getQaDir(root), "scenarios");
 }
 
+/** Visual baselines persist across runs (committed or not, per user choice). */
+export function getVisualBaselineDir(root: string): string {
+  return path.join(getQaDir(root), ".visual", "baselines");
+}
+
 export interface ReportPaths extends ArtifactDirs {
   latestDir: string;
   jsonFile: string;
@@ -105,9 +110,10 @@ export async function discoverWithCache(
 }
 
 /** ArtifactSink implementation that relativizes paths against the report dir. */
-export function makeArtifactSink(reportPaths: ReportPaths) {
+export function makeArtifactSink(reportPaths: ReportPaths, baselineDir: string) {
   return {
     screenshotsDir: reportPaths.screenshotsDir,
+    baselineDir,
     relativize(absPath: string): string {
       const root = reportPaths.reportDir.replace(/\/+$/, "");
       return absPath.startsWith(root) ? absPath.slice(root.length + 1) : absPath;

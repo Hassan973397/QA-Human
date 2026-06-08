@@ -71,6 +71,15 @@ export { LlmAiAnalyzer, type LlmProvider } from "./ai/LlmAiAnalyzer.js";
 // Reporting merge (parallel runs)
 export { mergeReports } from "./reporting/QaReporter.js";
 
+// Quality (visual regression + accessibility)
+export { compareScreenshots, type VisualDiffResult } from "./quality/visualCompare.js";
+export {
+  runAxeAudit,
+  impactAtLeast,
+  type A11yViolationResult,
+  type ImpactLevel,
+} from "./quality/a11yAudit.js";
+
 // Safety
 export { SafetyGuard, type SafetyDecision } from "./safety/SafetyGuard.js";
 
