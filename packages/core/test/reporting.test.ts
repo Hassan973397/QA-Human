@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { QaReporter, mergeReports } from "../src/reporting/QaReporter.js";
 import { renderHtmlReport } from "../src/reporting/HtmlReporter.js";
 import { renderJsonReport } from "../src/reporting/JsonReporter.js";
+import { gradeReport } from "../src/reporting/QaGrade.js";
 
 function makeReport(scenarios: Array<{ id: string; status: "passed" | "failed" | "skipped"; tags?: string[] }>) {
   const reporter = new QaReporter({ appName: "App", baseUrl: "http://localhost", environment: "local" });
@@ -53,6 +54,27 @@ test("JSON report round-trips to valid JSON", () => {
   const report = makeReport([{ id: "a", status: "passed" }]);
   const parsed = JSON.parse(renderJsonReport(report));
   assert.equal(parsed.summary.total, 1);
+});
+
+test("gradeReport scores a clean run high and a broken run low", () => {
+  const clean = gradeReport(makeReport([
+    { id: "a", status: "passed" },
+    { id: "b", status: "passed" },
+  ]));
+  assert.ok(clean.score >= 95, `clean score ${clean.score}`);
+  assert.ok(["A+", "A"].includes(clean.grade));
+
+  const broken = gradeReport(makeReport([
+    { id: "t", status: "failed", tags: ["multi-tenant"] },
+    { id: "u", status: "failed" },
+  ]));
+  assert.ok(broken.score < clean.score);
+  assert.equal(broken.failed, 2);
+});
+
+test("gradeReport never goes below zero", () => {
+  const many = Array.from({ length: 20 }, (_, i) => ({ id: `f${i}`, status: "failed" as const }));
+  assert.ok(gradeReport(makeReport(many)).score >= 0);
 });
 
 test("mergeReports combines scenarios and recomputes the summary", () => {

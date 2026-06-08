@@ -9,6 +9,7 @@ import { runAxeAudit, impactAtLeast } from "../quality/a11yAudit.js";
 import { auditPageHeuristics } from "../quality/uxHeuristics.js";
 import { auditUiQuality, checkHorizontalOverflow } from "../quality/uiQuality.js";
 import { auditSeo } from "../quality/seoAudit.js";
+import { auditForms } from "../quality/formAudit.js";
 import type { ArtifactRef, A11yViolation, UxFinding } from "../reporting/types.js";
 import { humanClick, humanFill, humanType } from "./HumanAction.js";
 import {
@@ -417,6 +418,11 @@ export class HumanAgent {
   /** يدقّق SEO والميتا للصفحة الحالية. */
   async reviewSeo(scopeLabel?: string): Promise<void> {
     await this.recordPageFindings("seo review", scopeLabel, auditSeo);
+  }
+
+  /** يفحص تحقّق نماذج الصفحة الحالية (آمن بلا إرسال). */
+  async reviewForms(scopeLabel?: string): Promise<void> {
+    await this.recordPageFindings("forms review", scopeLabel, auditForms);
   }
 
   /** يفحص كسر التخطيط عند المقاس الحالي (يُستعمل بعد تغيير حجم النافذة). */

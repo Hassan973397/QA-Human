@@ -58,6 +58,7 @@ export { renderMarkdownReport } from "./reporting/MarkdownReporter.js";
 export { renderJsonReport } from "./reporting/JsonReporter.js";
 export { renderHtmlReport } from "./reporting/HtmlReporter.js";
 export { classifyFailure } from "./reporting/SeverityClassifier.js";
+export { gradeReport, type QaGrade } from "./reporting/QaGrade.js";
 export * from "./reporting/types.js";
 
 // AI analyzer (rule-based v1, LLM-ready)
@@ -83,6 +84,8 @@ export { auditPageHeuristics, type RawUxFinding } from "./quality/uxHeuristics.j
 export { auditUiQuality, checkHorizontalOverflow } from "./quality/uiQuality.js";
 export { auditSeo } from "./quality/seoAudit.js";
 export { auditApi } from "./quality/apiAudit.js";
+export { auditForms } from "./quality/formAudit.js";
+export { auditStaticCode } from "./quality/staticAudit.js";
 
 // Safety
 export { SafetyGuard, type SafetyDecision } from "./safety/SafetyGuard.js";

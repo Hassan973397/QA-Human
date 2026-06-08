@@ -41,6 +41,7 @@ export const discoveryConfigSchema = z.object({
   include: z
     .array(z.string())
     .default([
+      "*.{ts,tsx,js,jsx,mjs,cjs}",
       "src/**/*",
       "app/**/*",
       "pages/**/*",
@@ -49,6 +50,17 @@ export const discoveryConfigSchema = z.object({
       "modules/**/*",
       "apps/**/*",
       "packages/**/*",
+      "server/**/*",
+      "lib/**/*",
+      "api/**/*",
+      "backend/**/*",
+      "controllers/**/*",
+      "services/**/*",
+      "models/**/*",
+      "db/**/*",
+      "database/**/*",
+      "prisma/**/*",
+      "migrations/**/*",
     ]),
   exclude: z
     .array(z.string())

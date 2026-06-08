@@ -1,4 +1,5 @@
 import { formatDuration } from "../utils/time.js";
+import { gradeReport } from "./QaGrade.js";
 import type { QaReport, ScenarioResult } from "./types.js";
 
 const STATUS_EMOJI: Record<string, string> = {
@@ -11,6 +12,12 @@ const STATUS_EMOJI: Record<string, string> = {
 export function renderMarkdownReport(report: QaReport): string {
   const l: string[] = [];
   l.push(`# QA Report — ${report.appName}`);
+  l.push("");
+  const g = gradeReport(report);
+  l.push(`## 🏅 QA Score: ${g.grade} (${g.score}/100)`);
+  l.push(`> ${g.verdict}`);
+  l.push("");
+  l.push(`${g.failed} failed scenario(s) · ${g.security} security finding(s) · ${g.important} important review finding(s) · ${g.advisories} advisory.`);
   l.push("");
   l.push(`- Base URL: \`${report.baseUrl}\``);
   l.push(`- Environment: ${report.environment}`);
@@ -82,6 +89,8 @@ const DOMAIN_LABEL: Record<string, string> = {
   seo: "SEO & metadata",
   api: "Backend / API",
   links: "Links & assets",
+  forms: "Form validation",
+  code: "Code & backend (static)",
 };
 
 /** قسم مراجعة شاملة مجمّع حسب الطبقة ثم الصفحة، مرتّب بالخطورة. */

@@ -44,6 +44,8 @@ test("the expected flagship scenarios are present", () => {
     "seo.audit",
     "api.security",
     "links.integrity",
+    "forms.validation",
+    "audit.static",
   ]) {
     assert.ok(ids.has(id), `missing ${id}`);
   }

@@ -1,5 +1,10 @@
 import { formatDuration } from "../utils/time.js";
+import { gradeReport } from "./QaGrade.js";
 import type { QaReport, ScenarioResult } from "./types.js";
+
+const GRADE_COLOR: Record<string, string> = {
+  "A+": "#16a34a", A: "#16a34a", B: "#65a30d", C: "#d97706", D: "#dc2626", F: "#b91c1c",
+};
 
 const STATUS_COLOR: Record<string, string> = {
   passed: "#16a34a",
@@ -62,6 +67,8 @@ export function renderHtmlReport(report: QaReport): string {
   <h1>QA Report — ${esc(report.appName)}</h1>
   <div class="muted">${esc(report.baseUrl)} · ${esc(report.environment)} · ${esc(report.startedAt)} · ${formatDuration(report.durationMs)}</div>
 
+  ${gradeBanner(report)}
+
   <div class="top">
     ${donut(s)}
     <div>
@@ -95,6 +102,20 @@ export function renderHtmlReport(report: QaReport): string {
 </div>
 ${filterScript()}
 </body></html>`;
+}
+
+/** شارة الدرجة والحُكم التنفيذي أعلى التقرير. */
+function gradeBanner(report: QaReport): string {
+  const g = gradeReport(report);
+  const color = GRADE_COLOR[g.grade] ?? "#6b7280";
+  return `<div class="scenario" style="display:flex;gap:20px;align-items:center;border-color:${color}">
+    <div style="font-size:48px;font-weight:800;color:${color};line-height:1;min-width:88px;text-align:center">
+      ${g.grade}<div style="font-size:13px;color:#9aa7b4;font-weight:500">${g.score}/100</div></div>
+    <div>
+      <div style="font-size:16px;font-weight:600">${esc(g.verdict)}</div>
+      <div class="muted" style="margin-top:4px">${g.failed} failed · ${g.security} security · ${g.important} important · ${g.advisories} advisory</div>
+    </div>
+  </div>`;
 }
 
 /** SVG donut chart of the status breakdown, built from stacked stroked circles. */
@@ -234,6 +255,8 @@ const DOMAIN_LABEL: Record<string, string> = {
   seo: "SEO & metadata",
   api: "Backend / API",
   links: "Links & assets",
+  forms: "Form validation",
+  code: "Code & backend (static)",
 };
 
 /** قسم «مراجعة شاملة» — ملاحظات مجمّعة حسب الطبقة ثم الصفحة. */

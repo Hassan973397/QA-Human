@@ -21,6 +21,8 @@ import seoAudit from "./review/seoAudit.js";
 import responsive from "./review/responsive.js";
 import apiSecurity from "./review/apiSecurity.js";
 import linksIntegrity from "./review/linksIntegrity.js";
+import formsValidation from "./review/formsValidation.js";
+import staticCodeAudit from "./review/staticAudit.js";
 
 export {
   authLogin,
@@ -35,6 +37,8 @@ export {
   responsive,
   apiSecurity,
   linksIntegrity,
+  formsValidation,
+  staticCodeAudit,
   customerCreateOrder,
   merchantManageOrder,
   merchantBlockCustomer,
@@ -69,6 +73,8 @@ export const builtinScenarios: ScenarioDefinition[] = [
   responsive,
   apiSecurity,
   linksIntegrity,
+  formsValidation,
+  staticCodeAudit,
 ];
 
 /** Look up built-in scenarios by id, with substring fallback. */

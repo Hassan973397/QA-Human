@@ -120,12 +120,23 @@ Output lands in `qa/.hqa/` (`app-knowledge-graph.json`, `routes.json`, `forms.js
 
 ## Built-in scenarios
 
-`auth.login`, `smoke.pages`, `smoke.blankScreen`, `explore.crawl`,
-`ecommerce.customerCreateOrder`, `ecommerce.merchantManageOrder`,
+Functional & security: `auth.login`, `smoke.pages`, `smoke.blankScreen`,
+`explore.crawl`, `ecommerce.customerCreateOrder`, `ecommerce.merchantManageOrder`,
 `ecommerce.merchantBlockCustomer`, `ecommerce.blockedCustomerCannotOrder`,
 `ecommerce.orderLifecycle`, `security.rolePermissions`,
 `security.unauthenticatedAccess`, `security.tenantIsolation`, `api.basicHealth`,
 `visual.pages`, `a11y.audit`.
+
+Comprehensive review (owner's eye, every layer):
+`review.productOwner` (UX/structure), `ui.designQuality` (contrast, fonts, broken
+images, layout), `ui.responsive` (phone/tablet), `seo.audit` (title/description/
+canonical/OpenGraph), `api.security` (security headers, cookies, errors),
+`links.integrity` (broken links/assets), `forms.validation` (input validation,
+no submission), `audit.static` (secrets, SQL injection, money-as-float, eval, XSS,
+exposed `.env` — backend & database at the source level).
+
+Every report opens with an overall **QA score (A+…F)** and an executive verdict,
+and groups review findings by layer with a fix suggestion each.
 
 Each scenario degrades gracefully: if the required role, route, or feature is missing it
 is **skipped/blocked** with a reason instead of producing a false failure.
