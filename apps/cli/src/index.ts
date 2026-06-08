@@ -55,6 +55,7 @@ program
   .option("--no-video", "disable video recording")
   .option("--no-trace", "disable tracing")
   .option("--allow-production", "permit running against a production-like URL")
+  .option("--update-snapshots", "record/refresh visual baselines instead of comparing")
   .option("--open", "open the HTML report when finished")
   .option("--verbose", "verbose logging")
   .action((opts) => guard(() => runCommand(opts)));

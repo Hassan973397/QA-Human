@@ -65,6 +65,7 @@ hqa report      # print the latest report summary + file links
 --fail-fast                  stop after the first failure
 --no-video / --no-trace      disable video/trace capture
 --allow-production           permit a production-like base URL (off by default)
+--update-snapshots           record/refresh visual baselines instead of comparing
 --open                       open the HTML report when finished
 --verbose                    verbose logging
 
@@ -106,7 +107,8 @@ Output lands in `qa/.hqa/` (`app-knowledge-graph.json`, `routes.json`, `forms.js
 `ecommerce.customerCreateOrder`, `ecommerce.merchantManageOrder`,
 `ecommerce.merchantBlockCustomer`, `ecommerce.blockedCustomerCannotOrder`,
 `ecommerce.orderLifecycle`, `security.rolePermissions`,
-`security.unauthenticatedAccess`, `security.tenantIsolation`, `api.basicHealth`.
+`security.unauthenticatedAccess`, `security.tenantIsolation`, `api.basicHealth`,
+`visual.pages`, `a11y.audit`.
 
 Each scenario degrades gracefully: if the required role, route, or feature is missing it
 is **skipped/blocked** with a reason instead of producing a false failure.
@@ -143,6 +145,14 @@ These are the features that make it punch far above ordinary test runners:
 - **Autonomous crawler.** `hqa run --scenario explore.crawl` explores the app like a human:
   breadth-first across same-origin links (bounded by `HQA_CRAWL_MAX`), smoke-checking every
   page for blank screens and server errors.
+- **Visual regression.** `visual.pages` pixel-diffs each page against a stored baseline
+  (pixelmatch). First run records baselines; later runs fail on changes beyond
+  `visual.maxDiffRatio` and attach a diff image. Refresh with `hqa run --update-snapshots`.
+- **Accessibility audits.** `a11y.audit` runs axe-core in-page and fails on violations at or
+  above `a11y.failOn` (default `serious`), listing every issue with its help URL.
+- **LLM failure analysis (optional).** Set `ANTHROPIC_API_KEY` and failed scenarios are
+  enriched with Claude (`claude-opus-4-8`) for root cause + fix; with no key it falls back to
+  the deterministic rule-based analyzer. Override the model with `HQA_LLM_MODEL`.
 
 ## Supported everywhere
 

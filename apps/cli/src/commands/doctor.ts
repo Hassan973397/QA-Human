@@ -102,6 +102,15 @@ export async function doctorCommand(options: DoctorOptions): Promise<void> {
     });
   }
 
+  // AI analyzer
+  checks.push({
+    name: "LLM failure analysis",
+    level: process.env.ANTHROPIC_API_KEY ? "ok" : "warn",
+    detail: process.env.ANTHROPIC_API_KEY
+      ? "ANTHROPIC_API_KEY set — LLM enrichment enabled"
+      : "no ANTHROPIC_API_KEY — using rule-based analyzer",
+  });
+
   render(checks);
 
   if (checks.some((c) => c.level === "fail")) {

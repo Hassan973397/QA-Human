@@ -91,6 +91,19 @@ function scenarioBlock(sc: ScenarioResult): string {
       `<div class="muted">Perf: slowest load ${slow.loadMs}ms (ttfb ${slow.ttfbMs}ms)${slow.overBudget ? " ⚠ over budget" : ""}</div>`,
     );
   }
+  const visualDiffs = sc.visualChecks.filter((v) => v.status === "diff");
+  if (sc.visualChecks.length) {
+    meta.push(
+      `<div class="muted">Visual: ${sc.visualChecks.length} check(s)${visualDiffs.length ? ` · <span class="err">${visualDiffs.length} regression(s)</span>` : ""}</div>`,
+    );
+  }
+  if (sc.a11yViolations.length) {
+    const top = sc.a11yViolations
+      .slice(0, 3)
+      .map((v) => `${esc(v.id)} (${esc(v.impact)})`)
+      .join(", ");
+    meta.push(`<div class="muted">A11y: ${sc.a11yViolations.length} violation(s) — ${top}</div>`);
+  }
   if (sc.failureReason) meta.push(`<div class="err">Failure: ${esc(sc.failureReason)}</div>`);
   if (sc.skipReason) meta.push(`<div class="muted">Skip: ${esc(sc.skipReason)}</div>`);
   if (sc.suspectedRootCause) meta.push(`<div class="muted">Root cause: ${esc(sc.suspectedRootCause)}</div>`);

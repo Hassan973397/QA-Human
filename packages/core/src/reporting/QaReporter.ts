@@ -14,6 +14,8 @@ import type {
   RequiredConfigItem,
   DiscoverySummary,
   PageMetric,
+  VisualCheck,
+  A11yViolation,
 } from "./types.js";
 
 export interface ScenarioMeta {
@@ -48,6 +50,8 @@ export class ScenarioReporter {
       steps: [],
       artifacts: [],
       metrics: [],
+      visualChecks: [],
+      a11yViolations: [],
       consoleErrors: [],
       networkErrors: [],
     };
@@ -87,6 +91,14 @@ export class ScenarioReporter {
 
   recordMetric(metric: PageMetric): void {
     this.result.metrics.push(metric);
+  }
+
+  recordVisualCheck(check: VisualCheck): void {
+    this.result.visualChecks.push(check);
+  }
+
+  recordA11yViolations(violations: A11yViolation[]): void {
+    this.result.a11yViolations.push(...violations);
   }
 
   recordConsoleError(entry: ConsoleErrorEntry): void {

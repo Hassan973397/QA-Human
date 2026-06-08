@@ -50,6 +50,7 @@ Assertions: `expectText`, `expectVisible`, `expectUrl`, `expectBlocked`,
 `expectPermissionDenied`, `assertNoBlankScreen`, `assertNoCriticalConsoleErrors`,
 `assertNoServerErrors`.
 Authenticated API (sends this role's cookies/session): `apiGet`, `apiPost`, `apiRequest`.
+Quality: `expectVisualMatch(name)` (pixel baseline diff), `auditAccessibility(scope?)` (axe-core).
 Memory/artifacts: `remember`, `recall`, `share`, `screenshot`, `captureState`,
 `waitForStablePage`, `pauseForDebug`, and `page` (raw Playwright page escape hatch).
 

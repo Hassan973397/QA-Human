@@ -11,6 +11,7 @@ import {
   renderMarkdownReport,
   renderHtmlReport,
   RuleBasedAiAnalyzer,
+  LlmAiAnalyzer,
   writeText,
   ensureDir,
   setVerbose,
@@ -30,11 +31,13 @@ import {
   getAuthDir,
   getScenariosDir,
   getReportPaths,
+  getVisualBaselineDir,
   makeArtifactSink,
   discoverWithCache,
   tsxImporter,
   type ReportPaths,
 } from "../lib.js";
+import { createAnthropicProvider } from "../anthropicProvider.js";
 
 export interface RunOptions {
   cwd?: string;
@@ -53,6 +56,7 @@ export interface RunOptions {
   trace?: boolean;
   allowProduction?: boolean;
   open?: boolean;
+  updateSnapshots?: boolean;
   verbose?: boolean;
 }
 
@@ -106,6 +110,7 @@ export async function runCommand(options: RunOptions): Promise<void> {
       ? await runShard(scenarios, config, graph, artifacts, reportPaths, options)
       : await runParallel(scenarios, workers, config, graph, artifacts, reportPaths, options);
 
+  await enrichFailures(report);
   await writeReports(report, reportPaths, options.report ?? "all");
   await saveHistory(root, reportPaths);
 
@@ -133,7 +138,7 @@ async function runShard(
     graph,
     engine,
     environment: detectEnvironment(config.app.baseUrl),
-    artifacts: makeArtifactSink(reportPaths),
+    artifacts: makeArtifactSink(reportPaths, getVisualBaselineDir(getProjectRoot(options))),
     failFast: options.failFast,
     retries: config.retries,
   });
@@ -168,6 +173,7 @@ function applyOverrides(config: QaConfig, options: RunOptions): QaConfig {
     app: { ...config.app, baseUrl: options.baseUrl ?? config.app.baseUrl },
     workers: options.workers ? Math.max(1, Number(options.workers)) : config.workers,
     retries: options.retries ? Math.max(0, Number(options.retries)) : config.retries,
+    visual: { ...config.visual, updateBaselines: options.updateSnapshots ? true : config.visual.updateBaselines },
     browser: {
       ...config.browser,
       engine,
@@ -212,6 +218,25 @@ async function assembleScenarios(
   if (options.scenario) all = all.filter((s) => s.id.includes(options.scenario!));
   if (options.role) all = all.filter((s) => s.roles.includes(options.role!));
   return all;
+}
+
+/** When an Anthropic API key is present, replace rule-based root-cause text with LLM analysis. */
+async function enrichFailures(report: QaReport): Promise<void> {
+  const provider = createAnthropicProvider();
+  if (!provider) return;
+  const analyzer = new LlmAiAnalyzer(provider);
+  const failed = report.scenarios.filter((s) => s.status === "failed");
+  if (failed.length === 0) return;
+  logger.info(`Enriching ${failed.length} failure(s) with LLM analysis (claude)...`);
+  for (const sc of failed) {
+    try {
+      const analysis = await analyzer.enrichFailure(sc);
+      sc.suspectedRootCause = analysis.suspectedRootCause;
+      sc.recommendedFix = analysis.recommendedFix;
+    } catch {
+      // keep the rule-based analysis already attached
+    }
+  }
 }
 
 async function writeReports(report: QaReport, paths: ReportPaths, format: string): Promise<void> {
