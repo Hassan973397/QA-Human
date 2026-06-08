@@ -46,17 +46,22 @@ program
   .option("--role <role>", "only run scenarios that use this role")
   .option("--slow-mo <ms>", "slow down actions by N ms")
   .option("--base-url <url>", "override the app base URL")
+  .option("--browser <engine>", "chromium | firefox | webkit")
+  .option("--workers <n>", "number of parallel workers")
   .option("--report <format>", "json | md | html | all", "all")
   .option("--fail-fast", "stop after the first failing scenario")
   .option("--no-video", "disable video recording")
   .option("--no-trace", "disable tracing")
   .option("--allow-production", "permit running against a production-like URL")
+  .option("--open", "open the HTML report when finished")
   .option("--verbose", "verbose logging")
   .action((opts) => guard(() => runCommand(opts)));
 
 program
   .command("report")
   .description("Print the latest report summary and file links")
+  .option("--open", "open the HTML report in the browser")
+  .option("--compare", "compare against the previous run")
   .action((opts) => guard(() => reportCommand(opts)));
 
 program.parseAsync(process.argv).catch((error) => {

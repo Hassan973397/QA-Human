@@ -212,6 +212,47 @@ export class HumanAgent {
     });
   }
 
+  // ---- authenticated API (shares this role's cookies/session) ----------
+
+  /**
+   * Issues an HTTP request through this role's browser context, so cookies and
+   * auth headers from the logged-in session are sent automatically. This is how
+   * scenarios verify API-level authorization + tenant isolation as a real user.
+   */
+  async apiRequest(
+    method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+    path: string,
+    opts: { data?: unknown; headers?: Record<string, string> } = {},
+  ): Promise<{ status: number; ok: boolean; body: unknown }> {
+    return this.act(`api ${method} ${path}`, async () => {
+      const url = joinUrl(this.deps.config.app.baseUrl, path);
+      const res = await this.deps.context.request.fetch(url, {
+        method,
+        headers: opts.headers,
+        ...(opts.data === undefined ? {} : { data: opts.data as object }),
+        failOnStatusCode: false,
+      });
+      const status = res.status();
+      let body: unknown = null;
+      const text = await res.text().catch(() => "");
+      try {
+        body = text ? JSON.parse(text) : null;
+      } catch {
+        body = text;
+      }
+      this.deps.reporter.setStepDetail(`→ ${status}`);
+      return { status, ok: res.ok(), body };
+    });
+  }
+
+  apiGet(path: string, headers?: Record<string, string>) {
+    return this.apiRequest("GET", path, { headers });
+  }
+
+  apiPost(path: string, data?: unknown, headers?: Record<string, string>) {
+    return this.apiRequest("POST", path, { data, headers });
+  }
+
   // ---- memory + artifacts ----------------------------------------------
 
   remember(key: string, value: unknown): void {
@@ -286,7 +327,8 @@ export class HumanAgent {
   }
 
   private async captureScreenshot(name: string): Promise<void> {
-    const file = `${this.role}-${String(++this.screenshotCounter).padStart(2, "0")}-${this.slug(name)}.png`;
+    const sid = this.slug(this.deps.reporter.result.id);
+    const file = `${sid}-${this.role}-${String(++this.screenshotCounter).padStart(2, "0")}-${this.slug(name)}.png`;
     const abs = `${this.deps.artifacts.screenshotsDir}/${file}`;
     try {
       await this.deps.page.screenshot({ path: abs, fullPage: false });

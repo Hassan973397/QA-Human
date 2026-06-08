@@ -1,6 +1,6 @@
 import path from "node:path";
 import { chromium, firefox, webkit, type Browser, type BrowserContext } from "playwright";
-import { ensureDir, pathExists, type QaConfig } from "@hasan-qa-humans/core";
+import { ensureDir, pathExists, fs, type QaConfig } from "@hasan-qa-humans/core";
 import { BrowserRoleContext } from "./BrowserRoleContext.js";
 import { shouldRecordVideo } from "./videoManager.js";
 import type { PlaywrightEngineOptions } from "./types.js";
@@ -22,7 +22,7 @@ export class BrowserSessionManager {
 
   async launch(): Promise<void> {
     if (this.browser) return;
-    const engine = ENGINES[this.opts.browserName ?? "chromium"];
+    const engine = ENGINES[this.opts.browserName ?? this.config.browser.engine ?? "chromium"];
     this.browser = await engine.launch({
       headless: this.config.browser.headless,
       slowMo: this.config.browser.slowMo,
@@ -57,7 +57,14 @@ export class BrowserSessionManager {
 
   async persistStorageState(context: BrowserContext, role: string): Promise<void> {
     await ensureDir(this.opts.authDir);
-    await context.storageState({ path: this.authFile(role) });
+    // Write to a unique temp file then rename, so concurrent workers never read
+    // a half-written storageState for the same role.
+    const finalPath = this.authFile(role);
+    const tmp = `${finalPath}.${process.pid}.${Date.now()}.tmp`;
+    await context.storageState({ path: tmp });
+    await fs.move(tmp, finalPath, { overwrite: true }).catch(async () => {
+      await fs.remove(tmp).catch(() => undefined);
+    });
   }
 
   async close(): Promise<void> {

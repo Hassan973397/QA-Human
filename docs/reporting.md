@@ -48,8 +48,20 @@ qa/reports/latest/
 The same logic is exposed via the `AiAnalyzer` interface (`RuleBasedAiAnalyzer`), which is
 designed so an LLM-backed analyzer can replace it later without changing the runner.
 
+## History & comparison
+
+Every run is archived to `qa/reports/<timestamp>/` (a copy of `latest/`).
+`hqa report --compare` diffs the latest run against the previous one and prints status
+changes (e.g. `passed → failed`) and newly added scenarios.
+
+## Parallel runs
+
+With `--workers N` (or `workers` in config) scenarios are sharded across N isolated
+browsers; each worker produces a partial report and they are merged via `mergeReports`.
+Artifact filenames are scenario-scoped, so parallel workers never collide.
+
 ## Viewing
 
 - `hqa report` prints the summary and file links to the terminal.
-- Open `report.html` in a browser for the full visual report.
+- `hqa report --open` (or `hqa run --open`) opens the HTML report.
 - Open a trace: `npx playwright show-trace qa/reports/latest/artifacts/traces/<file>.zip`.

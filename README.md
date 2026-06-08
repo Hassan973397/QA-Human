@@ -58,11 +58,18 @@ hqa report      # print the latest report summary + file links
 --role <role>                only scenarios that use this role
 --slow-mo <ms>               slow actions down
 --base-url <url>             override APP_BASE_URL
+--browser <engine>           chromium | firefox | webkit
+--workers <n>                run scenarios in N parallel workers
 --report json|md|html|all    report format (default: all)
 --fail-fast                  stop after the first failure
 --no-video / --no-trace      disable video/trace capture
 --allow-production           permit a production-like base URL (off by default)
+--open                       open the HTML report when finished
 --verbose                    verbose logging
+
+# report also supports:
+hqa report --open            open the HTML report
+hqa report --compare         diff the latest run against the previous one
 ```
 
 ## Quick start
@@ -98,7 +105,7 @@ Output lands in `qa/.hqa/` (`app-knowledge-graph.json`, `routes.json`, `forms.js
 `ecommerce.customerCreateOrder`, `ecommerce.merchantManageOrder`,
 `ecommerce.merchantBlockCustomer`, `ecommerce.blockedCustomerCannotOrder`,
 `ecommerce.orderLifecycle`, `security.rolePermissions`,
-`security.unauthenticatedAccess`, `security.tenantIsolation`.
+`security.unauthenticatedAccess`, `security.tenantIsolation`, `api.basicHealth`.
 
 Each scenario degrades gracefully: if the required role, route, or feature is missing it
 is **skipped/blocked** with a reason instead of producing a false failure.
@@ -114,6 +121,20 @@ is **skipped/blocked** with a reason instead of producing a false failure.
    and HTTP 5xx; failures snapshot screenshots, traces, and video.
 5. **Report** — JSON + Markdown + HTML with severity, suspected root cause, recommended
    fix, security findings, unknowns, and required configuration.
+
+## Supported everywhere
+
+- **Browsers:** Chromium, Firefox, WebKit (`--browser` or `browser.engine`).
+- **Parallelism:** `--workers N` (or `workers` in config) runs scenarios across N
+  isolated browsers and merges the reports.
+- **Authenticated API checks:** every human can call `apiGet/apiPost/apiRequest` through
+  its own logged-in session (cookies included) — used by `api.basicHealth` and isolation checks.
+- **Test data safety:** `ctx.testData("order")` → `AUTO_HQA_order`; `ctx.safety` exposes the
+  guard (production blocking, delete-prefix, destructive gate).
+- **History & comparison:** every run is archived under `qa/reports/<timestamp>/`;
+  `hqa report --compare` shows status changes vs the previous run.
+- **LLM-ready analysis:** `LlmAiAnalyzer` plugs an LLM provider in behind the `AiAnalyzer`
+  interface; with no provider it falls back to the deterministic rule-based analyzer.
 
 ## Adding things
 

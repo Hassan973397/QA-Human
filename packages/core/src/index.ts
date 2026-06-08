@@ -56,12 +56,16 @@ export { renderHtmlReport } from "./reporting/HtmlReporter.js";
 export { classifyFailure } from "./reporting/SeverityClassifier.js";
 export * from "./reporting/types.js";
 
-// AI analyzer (rule-based v1)
+// AI analyzer (rule-based v1, LLM-ready)
 export {
   RuleBasedAiAnalyzer,
   type AiAnalyzer,
   type FailureAnalysis,
 } from "./ai/AiAnalyzer.js";
+export { LlmAiAnalyzer, type LlmProvider } from "./ai/LlmAiAnalyzer.js";
+
+// Reporting merge (parallel runs)
+export { mergeReports } from "./reporting/QaReporter.js";
 
 // Safety
 export { SafetyGuard, type SafetyDecision } from "./safety/SafetyGuard.js";

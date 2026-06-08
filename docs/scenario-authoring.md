@@ -34,7 +34,9 @@ export default scenario({
 - `report` — the per-scenario reporter (steps are added automatically by human actions).
 - `config` — the validated `qa.config`.
 - `sharedMemory` — `Map` shared across humans/scenarios (e.g. an orderId).
-- `api` — small fetch client scoped to `app.baseUrl` (`api.get/post/request`).
+- `api` — unauthenticated fetch client scoped to `app.baseUrl` (`api.get/post/request`).
+- `safety` — the `SafetyGuard` (production checks, delete prefix, destructive gate).
+- `testData(label)` — prefix a label with the safe test-data prefix (`AUTO_HQA_<label>`).
 - `skip(reason)` — abort as **skipped** (not a failure).
 - `requireRole(role)` / `requireRoute(route)` / `requireFeature(feature)` — guard helpers
   that skip with a clear reason when a prerequisite is missing.
@@ -47,6 +49,7 @@ Interaction: `click`, `fill`, `fillByLabel`, `selectOption`, `typeLikeHuman`,
 Assertions: `expectText`, `expectVisible`, `expectUrl`, `expectBlocked`,
 `expectPermissionDenied`, `assertNoBlankScreen`, `assertNoCriticalConsoleErrors`,
 `assertNoServerErrors`.
+Authenticated API (sends this role's cookies/session): `apiGet`, `apiPost`, `apiRequest`.
 Memory/artifacts: `remember`, `recall`, `share`, `screenshot`, `captureState`,
 `waitForStablePage`, `pauseForDebug`, and `page` (raw Playwright page escape hatch).
 

@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import {
   loadQaConfig,
   pathExists,
@@ -38,20 +38,27 @@ export async function doctorCommand(options: DoctorOptions): Promise<void> {
   const pm = detectPm(root);
   checks.push({ name: "Package manager", level: "ok", detail: pm });
 
-  // Playwright browsers
-  let browserOk = false;
-  let browserDetail = "";
-  try {
-    const exe = chromium.executablePath();
-    browserOk = await pathExists(exe);
-    browserDetail = browserOk ? "chromium installed" : "run `npx playwright install chromium`";
-  } catch (error) {
-    browserDetail = `could not resolve browser: ${(error as Error).message}`;
+  // Playwright browsers (report all engines)
+  const engines: Array<[string, { executablePath(): string }]> = [
+    ["chromium", chromium],
+    ["firefox", firefox],
+    ["webkit", webkit],
+  ];
+  const installed: string[] = [];
+  for (const [name, engine] of engines) {
+    try {
+      if (await pathExists(engine.executablePath())) installed.push(name);
+    } catch {
+      /* not installed */
+    }
   }
   checks.push({
     name: "Playwright browsers",
-    level: browserOk ? "ok" : "fail",
-    detail: browserDetail,
+    level: installed.length > 0 ? "ok" : "fail",
+    detail:
+      installed.length > 0
+        ? `installed: ${installed.join(", ")}`
+        : "none — run `npx playwright install chromium`",
   });
 
   // .env.qa

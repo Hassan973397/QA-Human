@@ -11,6 +11,7 @@ import orderLifecycle from "./ecommerce/orderLifecycle.js";
 import rolePermissions from "./security/rolePermissions.js";
 import tenantIsolation from "./security/tenantIsolation.js";
 import unauthenticatedAccess from "./security/unauthenticatedAccess.js";
+import apiBasicHealth from "./api/basicHealth.js";
 
 export {
   authLogin,
@@ -24,6 +25,7 @@ export {
   rolePermissions,
   tenantIsolation,
   unauthenticatedAccess,
+  apiBasicHealth,
 };
 
 /** Every built-in scenario, in a sensible default execution order. */
@@ -39,6 +41,7 @@ export const builtinScenarios: ScenarioDefinition[] = [
   rolePermissions,
   unauthenticatedAccess,
   tenantIsolation,
+  apiBasicHealth,
 ];
 
 /** Look up built-in scenarios by id, with substring fallback. */

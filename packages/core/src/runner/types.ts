@@ -4,6 +4,7 @@ import type { AppKnowledgeGraph } from "../knowledge/types.js";
 import type { ScenarioReporter } from "../reporting/QaReporter.js";
 import type { ScenarioStatus, Severity } from "../reporting/types.js";
 import type { HumanAgent } from "../human/HumanAgent.js";
+import type { SafetyGuard } from "../safety/SafetyGuard.js";
 
 /** A per-role browser surface produced by the engine. */
 export interface RoleContext {
@@ -65,7 +66,12 @@ export interface ScenarioContext {
   report: ScenarioReporter;
   config: QaConfig;
   sharedMemory: Map<string, unknown>;
+  /** Unauthenticated API client scoped to the base URL. */
   api: ApiClient;
+  /** Safety guard for this run (production checks, delete prefix, destructive gate). */
+  safety: SafetyGuard;
+  /** Prefix a label with the configured test-data prefix (e.g. AUTO_HQA_order123). */
+  testData(label: string): string;
   /** Abort the scenario as skipped (not a failure). */
   skip(reason: string): never;
   /** Skip unless the role is available. */
