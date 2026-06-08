@@ -25,7 +25,11 @@ export * from "./knowledge/types.js";
 
 // Selectors
 export { SelectorRegistry } from "./selectors/SelectorRegistry.js";
-export { SelectorResolver } from "./selectors/SelectorResolver.js";
+export {
+  SelectorResolver,
+  type HealingEvent,
+  type HealingCallback,
+} from "./selectors/SelectorResolver.js";
 export { looksLikeSelector, hintsForLabel } from "./selectors/selectorHints.js";
 
 // Human

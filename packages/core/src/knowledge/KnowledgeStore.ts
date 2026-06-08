@@ -1,7 +1,13 @@
 import path from "node:path";
 import { writeJson, readJson, writeText, pathExists } from "../utils/file.js";
 import { renderDiscoveryReport } from "../discovery/DiscoveryReport.js";
+import type { DiscoveryResult } from "../discovery/types.js";
 import type { AppKnowledgeGraph } from "./types.js";
+
+interface DiscoveryCacheFile {
+  signature: string;
+  discovery: DiscoveryResult;
+}
 
 /**
  * Persists discovery + knowledge artifacts under <qaDir>/.hqa so subsequent
@@ -55,5 +61,17 @@ export class KnowledgeStore {
 
   async exists(): Promise<boolean> {
     return pathExists(this.p("app-knowledge-graph.json"));
+  }
+
+  // ---- discovery cache (skip re-scan when files are unchanged) ----------
+
+  async loadDiscoveryCache(): Promise<DiscoveryCacheFile | null> {
+    const file = this.p("discovery-cache.json");
+    if (!(await pathExists(file))) return null;
+    return readJson<DiscoveryCacheFile | null>(file, null);
+  }
+
+  async saveDiscoveryCache(signature: string, discovery: DiscoveryResult): Promise<void> {
+    await writeJson(this.p("discovery-cache.json"), { signature, discovery });
   }
 }

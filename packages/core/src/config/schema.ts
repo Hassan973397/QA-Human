@@ -93,6 +93,10 @@ export const qaConfigSchema = z.object({
   scenariosDir: z.string().optional(),
   /** Default number of parallel workers for `hqa run`. */
   workers: z.number().int().min(1).max(16).default(1),
+  /** Default retry count for failed scenarios (flaky detection). */
+  retries: z.number().int().min(0).max(5).default(0),
+  /** Page-load budget in ms; navigations slower than this are flagged. 0 = off. */
+  performanceBudgetMs: z.number().int().min(0).default(0),
   safety: safetyConfigSchema.default({}),
 });
 

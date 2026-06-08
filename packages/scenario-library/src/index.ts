@@ -12,11 +12,13 @@ import rolePermissions from "./security/rolePermissions.js";
 import tenantIsolation from "./security/tenantIsolation.js";
 import unauthenticatedAccess from "./security/unauthenticatedAccess.js";
 import apiBasicHealth from "./api/basicHealth.js";
+import exploreCrawl from "./explore/crawl.js";
 
 export {
   authLogin,
   pageSmoke,
   blankScreenCheck,
+  exploreCrawl,
   customerCreateOrder,
   merchantManageOrder,
   merchantBlockCustomer,
@@ -42,6 +44,7 @@ export const builtinScenarios: ScenarioDefinition[] = [
   unauthenticatedAccess,
   tenantIsolation,
   apiBasicHealth,
+  exploreCrawl,
 ];
 
 /** Look up built-in scenarios by id, with substring fallback. */

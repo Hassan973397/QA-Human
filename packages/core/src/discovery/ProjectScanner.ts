@@ -1,9 +1,12 @@
 import path from "node:path";
 import fg from "fast-glob";
+import os from "node:os";
 import { fs } from "../utils/file.js";
 import { toPosix } from "../utils/path.js";
 import { now } from "../utils/time.js";
 import { logger } from "../utils/logger.js";
+import { mapLimit } from "../utils/concurrency.js";
+import { shortHash } from "../utils/hash.js";
 import type { DiscoveryConfig } from "../config/schema.js";
 import type { DetectorContext, DiscoveryResult, ScannedFile } from "./types.js";
 import { detectFrameworks } from "./FrameworkDetector.js";
@@ -71,7 +74,8 @@ export class ProjectScanner {
     };
   }
 
-  private async readFiles(root: string): Promise<ScannedFile[]> {
+  /** Glob the scannable file list (no reads) — cheap, used for cache signatures. */
+  private async listFiles(root: string): Promise<string[]> {
     const entries = await fg(this.discovery.include, {
       cwd: root,
       ignore: this.discovery.exclude,
@@ -80,22 +84,50 @@ export class ProjectScanner {
       dot: false,
       suppressErrors: true,
     });
+    return entries
+      .filter((p) => SCANNABLE_EXT.has(path.extname(p)))
+      .slice(0, this.discovery.maxFiles);
+  }
 
-    const limited = entries.slice(0, this.discovery.maxFiles);
-    const out: ScannedFile[] = [];
-    for (const absPath of limited) {
-      const ext = path.extname(absPath);
-      if (!SCANNABLE_EXT.has(ext)) continue;
+  /**
+   * A signature of the current file set (path + size + mtime). If it is unchanged
+   * since the last discovery, the cached result can be reused — making repeated
+   * `discover`/`run` effectively instant on large projects.
+   */
+  async signature(): Promise<string> {
+    const files = await this.listFiles(this.discovery.projectRoot);
+    const parts = await mapLimit(files, 64, async (absPath) => {
+      try {
+        const s = await fs.stat(absPath);
+        return `${absPath}:${s.size}:${Math.round(s.mtimeMs)}`;
+      } catch {
+        return `${absPath}:0:0`;
+      }
+    });
+    return shortHash(parts.sort().join("|") + `|inc:${this.discovery.include.join(",")}`);
+  }
+
+  private async readFiles(root: string): Promise<ScannedFile[]> {
+    const limited = await this.listFiles(root);
+    const concurrency = Math.max(8, (os.cpus()?.length ?? 4) * 4);
+    const read = await mapLimit(limited, concurrency, async (absPath) => {
       try {
         const stat = await fs.stat(absPath);
-        if (stat.size > MAX_FILE_BYTES) continue;
+        if (stat.size > MAX_FILE_BYTES) return null;
         const content = await fs.readFile(absPath, "utf8");
-        out.push({ absPath, relPath: toPosix(path.relative(root, absPath)), ext, content });
+        const file: ScannedFile = {
+          absPath,
+          relPath: toPosix(path.relative(root, absPath)),
+          ext: path.extname(absPath),
+          content,
+        };
+        return file;
       } catch {
         // Unreadable file — skip silently; never break discovery on one file.
+        return null;
       }
-    }
-    return out;
+    });
+    return read.filter((f): f is ScannedFile => f !== null);
   }
 
   private inferFeatures(input: {
