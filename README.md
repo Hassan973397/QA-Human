@@ -213,8 +213,12 @@ examples/sama-erp             # example QA setup for a multi-tenant ERP/commerce
 ```bash
 pnpm build       # tsc -b across all packages
 pnpm typecheck   # type-check
+pnpm lint        # eslint (flat config)
+pnpm test        # node:test unit suite (discovery, config, selectors, safety, reporting, utils)
 pnpm clean       # remove build outputs
 ```
+
+CI runs install → build → typecheck → lint → test on every push and pull request.
 
 ## Safety
 
