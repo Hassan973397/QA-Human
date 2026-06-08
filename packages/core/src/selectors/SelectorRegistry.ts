@@ -10,11 +10,12 @@ export class SelectorRegistry {
   private readonly map = new Map<string, string[]>();
 
   constructor(hints: SelectorHint[] = []) {
+    // Config/discovery hints take priority; built-in defaults are appended as a
+    // fallback so a user-provided selector is always tried before the generic one.
+    for (const hint of hints) this.add(hint.name, hint.candidates);
     for (const [name, candidates] of Object.entries(defaultSelectors)) {
       this.add(name, candidates);
     }
-    // config first, then discovery (config hints come pre-sorted by builder)
-    for (const hint of hints) this.add(hint.name, hint.candidates);
   }
 
   add(name: string, candidates: string[]): void {

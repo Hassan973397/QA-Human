@@ -94,11 +94,13 @@ export const a11yConfigSchema = z.object({
 });
 
 export const qaConfigSchema = z.object({
-  app: z.object({
-    name: z.string().default("My App"),
-    baseUrl: z.string().default("http://localhost:3000"),
-    type: appTypeSchema.default("unknown"),
-  }),
+  app: z
+    .object({
+      name: z.string().default("My App"),
+      baseUrl: z.string().default("http://localhost:3000"),
+      type: appTypeSchema.default("unknown"),
+    })
+    .default({}),
   discovery: discoveryConfigSchema.default({}),
   browser: browserConfigSchema.default({}),
   roles: z.record(z.string(), roleConfigSchema).default({}),

@@ -12,10 +12,13 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "test": "node --import tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@hasan-qa-humans/core": "workspace:*"

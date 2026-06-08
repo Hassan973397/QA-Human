@@ -14,7 +14,7 @@
     "typecheck": "tsc -b",
     "clean": "tsc -b --clean && rimraf \"packages/*/dist\" \"apps/*/dist\" \"**/*.tsbuildinfo\"",
     "lint": "eslint .",
-    "test": "node --test || echo 'no tests yet'",
+    "test": "pnpm -r --if-present test",
     "hqa": "node apps/cli/dist/index.js"
   },
   "devDependencies": {
